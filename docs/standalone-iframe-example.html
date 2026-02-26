@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filemanager en iframe (sans bundle)</title>
+    <style>
+        /* Reprise de filemanager-field.css – modal et overlay */
+        #filemanager-modal {
+            display: none;
+        }
+        .filemanager-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+        }
+        .filemanager-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: #fff;
+            z-index: 9999;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .field-row { margin-bottom: 1rem; }
+        .field-row label { display: block; font-weight: bold; margin-bottom: 0.25rem; }
+        .field-row input[type="text"] { width: 100%; max-width: 400px; padding: 0.5rem; }
+        .btn { padding: 0.5rem 1rem; cursor: pointer; background: #6c757d; color: #fff; border: none; border-radius: 4px; }
+        .btn:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+    <h1>Exemple : filemanager en iframe sans installer le bundle</h1>
+    <p>Cette page n’utilise pas Symfony ni le bundle. Elle ouvre le filemanager (hébergé sur un autre domaine) dans une modale et récupère le fichier sélectionné via <code>postMessage</code>.</p>
+
+    <div class="field-row">
+        <label for="my-file">Fichier sélectionné</label>
+        <input type="text" id="my-file" name="file" readonly placeholder="Cliquez sur Parcourir pour choisir un fichier">
+        <button type="button" class="btn open-filemanager" data-target="my-file" data-url="https://VOTRE-DOMAINE/kbd/filemanager?mode=iframe&target=my-file&crossdomain=1&token=VOTRE_TOKEN">
+            Parcourir
+        </button>
+    </div>
+
+    <!-- Structure du modal (équivalent à iframe/modal.html.twig) -->
+    <div id="filemanager-modal">
+        <div class="filemanager-overlay"></div>
+        <div class="filemanager-content"></div>
+    </div>
+
+    <script>
+        // Comportement équivalent à filemanager-field.js – sans bundle, tout en vanilla JS
+        document.addEventListener("DOMContentLoaded", function () {
+            var buttons = document.querySelectorAll(".open-filemanager");
+            var modal = document.getElementById("filemanager-modal");
+
+            buttons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                    // Réponse à la demande d’origine du parent (pour le filemanager en cross-domain)
+                    window.addEventListener("message", function (event) {
+                        if (event.data && event.data.type === "REQUEST_PARENT_ORIGIN") {
+                            event.source.postMessage(
+                                { type: "PARENT_ORIGIN", origin: window.location.origin },
+                                event.origin
+                            );
+                        }
+                    });
+
+                    var url = button.getAttribute("data-url");
+                    var targetId = button.getAttribute("data-target");
+                    var input = document.getElementById(targetId);
+                    openModal(modal, input, url);
+                });
+            });
+        });
+
+        function openModal(modal, input, url) {
+            var iframe = document.createElement("iframe");
+            iframe.src = url;
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.border = "none";
+
+            var modalOverlay = modal.querySelector(".filemanager-overlay");
+            var modalContent = modal.querySelector(".filemanager-content");
+            modalContent.appendChild(iframe);
+            modal.style.display = "block";
+
+            modalOverlay.addEventListener("click", function () {
+                closeModal(modal, modalContent);
+            });
+
+            function messageHandler(event) {
+                if (event.data && event.data.type === "filemanager:selected") {
+                    input.value = event.data.file;
+                    closeModal(modal, modalContent);
+                    window.removeEventListener("message", messageHandler);
+                }
+            }
+
+            window.addEventListener("message", messageHandler);
+        }
+
+        function closeModal(modal, modalContent) {
+            var iframe = modalContent.querySelector("iframe");
+            if (iframe) iframe.remove();
+            modal.style.display = "none";
+        }
+    </script>
+</body>
+</html>
