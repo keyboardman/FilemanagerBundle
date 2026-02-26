@@ -32,10 +32,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 origin = _origin;
                 fileSelect(target, mode, _origin);
                 mediaFilter(_origin);
-                console.log("Origine du parent :", origin);
             } else {
                 mediaFilter();
-                console.log("Pas dans une iframe");
             }
         })
         .catch((err) => {

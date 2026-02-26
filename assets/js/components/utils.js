@@ -15,9 +15,8 @@ export function getParentOrigin(crossdomain = 0, timeout = 2000) {
         // Listener pour recevoir l'origine du parent
         function handleMessage(event) {
             if (event.data?.type === "PARENT_ORIGIN") {
-                console.log("crossdomain", crossdomain, event.data);
-                window.removeEventListener("message", handleMessage);
-                resolve(event.data.origin); // on renvoie l'origine du parent
+              window.removeEventListener("message", handleMessage);
+              resolve(event.data.origin); // on renvoie l'origine du parent
             }
         }
 

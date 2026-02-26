@@ -4,8 +4,6 @@ export default function (target, mode, origin) {
         button.addEventListener("click", () => {
             const path = button.dataset.path;
 
-            console.log("path", path, mode);
-
             if (mode == "iframe") {
                 window.parent.postMessage(
                     {

@@ -1,11 +1,9 @@
 export default function fileUpload(currentFilesystem, currentPath, uploadUrl) {
     const uploadBtn = document.getElementById("file-upload-btn");
     const fileInput = document.getElementById("file-upload-input");
-    console.log("fileUpload", fileInput);
 
     uploadBtn.addEventListener("click", () => {
-        console.log("uploadBtn");
-        fileInput.click();
+      fileInput.click();
     });
 
     fileInput.addEventListener("change", async (event) => {
