@@ -3,9 +3,18 @@
     "version": "v0.1.0",
     "description": "Filemanager Bundle",
     "type": "symfony-bundle",
-    "keywords": ["filemanager", "symfony", "flysystem"],
+    "keywords": [
+        "filemanager",
+        "symfony",
+        "flysystem"
+    ],
     "license": "MIT",
-    "authors": [{"name": "Keyboardman", "email": "luc.moisan@gmail.com"}],
+    "authors": [
+        {
+            "name": "Keyboardman",
+            "email": "luc.moisan@gmail.com"
+        }
+    ],
     "homepage": "https://github.com/keyboardman/FilemanagerBundle",
     "support": {
         "source": "https://github.com/keyboardman/FilemanagerBundle",
@@ -15,7 +24,17 @@
         "php": ">=8.2",
         "symfony/asset-mapper": "^8.0"
     },
-    "autoload": {"psr-4": {"Keyboardman\\FilemanagerBundle\\": "src/"}},
-    "autoload-dev": {"psr-4": {"Keyboardman\\FilemanagerBundle\\Tests\\": "tests/"}},
-    "require-dev": {"friendsofphp/php-cs-fixer": "^3.94"}
+    "autoload": {
+        "psr-4": {
+            "Keyboardman\\FilemanagerBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Keyboardman\\FilemanagerBundle\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94"
+    }
 }

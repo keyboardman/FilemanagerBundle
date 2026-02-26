@@ -4,7 +4,7 @@
 		<meta charset="UTF-8">
 		<title>Filemanager</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"> {% block stylesheets %}{% endblock %}{% block javascripts %}{% endblock %}
-		<link rel="stylesheet" href="{{ asset('bundles/keyboardmanfilemanager/assets/filemanager.css') }}">
+		<link rel="stylesheet" href="{{ asset('bundles/keyboardmanfilemanager/filemanager.css') }}">
 
 	</head>
 	<body>
@@ -32,6 +32,6 @@
 		{% include '@KeyboardmanFilemanager/components/modal_media.html.twig' %}
 		{% include '@KeyboardmanFilemanager/components/modal_rename.html.twig' %}
 		<div id="filemanager-app" data-upload-url="{{ path('keyboardman_filemanager_api_upload') }}" data-rename-url="{{ path('keyboardman_filemanager_api_rename') }}" data-filesystem="{{ filter.filesystem }}" data-path="{{ filter.path }}" data-field-target={{filter.target}} data-mode="{{filter.mode}}" data-crossdomain="{{filter.crossdomain}}"></div>
-		<script src="{{ asset('bundles/keyboardmanfilemanager/assets/filemanager.js') }}"></script>
+		<script src="{{ asset('bundles/keyboardmanfilemanager/filemanager.js') }}"></script>
 	</body>
 </html>
