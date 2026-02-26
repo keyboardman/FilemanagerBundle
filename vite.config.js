@@ -5,40 +5,29 @@ export default defineConfig(({ mode }) => {
     const isField = mode === "field";
 
     return {
-        publicDir: false,
-        base: "./",
+        publicDir: false,     // ne pas copier de fichiers statiques par défaut
+        base: "./",           // base relative pour Symfony AssetMapper
         build: {
-            outDir: path.resolve(__dirname, "public/assets"),
-            emptyOutDir: true, // on nettoie seulement au premier build
-            assetsDir: "",
+            outDir: path.resolve(__dirname, "assets"), // build directement dans assets/ du bundle
+            emptyOutDir: true, // on nettoie au premier build
+            assetsDir: "",     // pas de sous-dossier pour CSS/images
             cssCodeSplit: true,
             assetsInlineLimit: 0,
-            /*
-            lib: {
-                entry: isField
-                    ? path.resolve(__dirname, "assets/js/filemanager-field.js")
-                    : path.resolve(__dirname, "assets/js/filemanager.js"),
-                name: isField ? "FileManagerField" : "FileManager",
-                fileName: () =>
-                    isField ? "filemanager-field.js" : "filemanager.js",
-                formats: ["iife"], // ✅ maintenant autorisé
-            },*/
-
             rollupOptions: {
                 input: {
                     filemanager: path.resolve(
                         __dirname,
-                        "assets/js/filemanager.js",
+                        "frontend/js/filemanager.js"
                     ),
                     "filemanager-field": path.resolve(
                         __dirname,
-                        "assets/js/filemanager-field.js",
+                        "frontend/js/filemanager-field.js"
                     ),
                 },
                 output: {
                     entryFileNames: "[name].js",
-                    chunkFileNames: "[name].js", // ✅ important
-                    assetFileNames: "[name].[ext]", // ✅ important
+                    chunkFileNames: "[name].js",
+                    assetFileNames: "[name].[ext]",
                 },
             },
         },
