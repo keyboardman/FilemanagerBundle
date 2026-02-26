@@ -57,6 +57,12 @@ composer require keyboardman/filemanager-bundle
 composer update keyboardman/filemanager-bundle
 ```
 
+Le filemanager a besoin de **Flysystem** pour le stockage. Si ce n’est pas déjà le cas, installez le bundle officiel :
+
+```bash
+composer require league/flysystem-bundle
+```
+
 ### 2. Enregistrer le bundle
 
 Si ce n’est pas fait automatiquement (Flex), ajoutez dans `config/bundles.php` :
@@ -79,6 +85,21 @@ keyboardman_filemanager_bundle_routes:
 ```
 
 Le filemanager sera alors accessible sur la route nommée `keyboardman_filemanager` (ex. `/kbd/filemanager`).
+
+### 4. Asset Mapper
+
+Le bundle enregistre lui‑même son répertoire d’assets (`dist/`) dans l’Asset Mapper via sa configuration. Si vous rencontrez des conflits ou que les assets du filemanager ne sont pas trouvés, vérifiez `config/packages/asset_mapper.yaml` (ou la section `framework.asset_mapper` dans `framework.yaml`) et **commentez** la clé `paths` si vous n’exposez pas d’autres assets d’application :
+
+```yaml
+# config/packages/asset_mapper.yaml (ou framework.yaml)
+framework:
+    asset_mapper:
+        # The paths to make available to the asset mapper.
+        # paths:
+        #    - assets/
+```
+
+Ainsi, seuls les paths ajoutés par les bundles (dont le filemanager) sont utilisés. Si vous avez besoin des assets de votre application, laissez `paths` actif et assurez-vous que le bundle est bien chargé pour que son path soit prépendu.
 
 ---
 
