@@ -1,0 +1,60 @@
+{% set current = '/' %}
+<header class="bg-dark text-white mb-2">
+	<div class="p-3 d-flex justify-content-between align-items-center">
+		<h1 class="h5 mb-0">Filemanager</h1>
+
+		<div
+			class="d-flex align-items-center gap-2">
+			{# Sélecteur Filesystem #}
+			<select id="filesystem-select" class="form-select form-select-sm">
+				{% for fs in filesystems %}
+					<option value="{{ fs.name }}" {% if fs.name == filter.filesystem %} selected {% endif %}>
+						{{ fs.label }}
+					</option>
+				{% endfor %}
+			</select>
+
+			{# Filtre Type Média #}
+			<select id="media-filter" class="form-select form-select-sm">
+				<option value="">Tous les médias</option>
+				<option value="image" {% if filter.type == 'image' %} selected {% endif %}>Images</option>
+				<option value="audio" {% if filter.type == 'audio' %} selected {% endif %}>Audio</option>
+				<option value="video" {% if filter.type == 'video' %} selected {% endif %}>Vidéo</option>
+			</select>
+
+			{# Tri Nom #}
+			<select id="sort-filter" class="form-select form-select-sm">
+				<option value="name_asc" {% if filter.sort == 'name_asc' %} selected {% endif %}>Nom ↑</option>
+				<option value="name_desc" {% if filter.sort == 'name_desc' %} selected {% endif %}>Nom ↓</option>
+			</select>
+
+			{# Input caché pour upload #}
+			<input
+			type="file" id="file-upload-input" style="opacity:0; position:absolute; left:-9999px;"/>
+
+			{# Bouton Upload #}
+			<button class="btn btn-primary btn-sm" id="file-upload-btn">Upload</button>
+		</div>
+	</div>
+</header>
+<div class="container">
+	<div class="row">
+		<div class="col">
+			<nav aria-label="breadcrumb">
+				<ol class="breadcrumb">
+					<li class="breadcrumb-item" aria-current="page">
+						<a href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': '/' })) }}">
+							<i class="bi bi-house-fill"></i>
+						</a>
+					</li>
+					{% for _path in paths %}
+						{%  set current = current ~ _path ~ '/' %}
+						<li class="breadcrumb-item" aria-current="page">
+							<a href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': current })) }}">{{_path}}</a>
+						</li>
+					{% endfor %}
+				</ol>
+			</nav>
+		</div>
+	</div>
+</div>

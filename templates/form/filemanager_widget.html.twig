@@ -1,0 +1,9 @@
+{% block filemanager_widget %}
+	<div class="filemanager-widget" data-url="{{ form.vars.filemanager_url }}">
+		{{ block('form_widget_simple') }}
+		<button type="button" class="btn btn-secondary open-filemanager" data-target="{{ form.vars.id }}" data-url="{{ form.vars.filemanager_url }}">
+			Parcourir
+		</button>
+		<div class="preview"></div>
+	</div>
+{% endblock %}

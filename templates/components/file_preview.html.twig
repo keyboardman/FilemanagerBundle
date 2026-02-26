@@ -1,0 +1,40 @@
+{% set mime = file.mimeType|default('application/octet-stream') %}
+
+{% if mime starts with 'image/' %}
+	{% set type = 'image' %}
+{% elseif mime starts with 'video/' %}
+	{% set type = 'video' %}
+{% elseif mime starts with 'audio/' %}
+	{% set type = 'audio' %}
+{% else %}
+	{% set type = 'other' %}
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-center" style="height: 100qcw; border: 1px solid #ddd; background-color: #f8f9fa;">
+	{% if type in ['image', 'video', 'audio'] %}
+		<div class="file-preview d-flex align-items-center justify-content-center" data-file="{{ file.path|resolve_url(filter.filesystem) }}" data-type="{{ type }}" data-name="{{ file.name }}" style="width: 100%; height: 100%; cursor: pointer;">
+
+			{% if type == 'image' %}
+				<img src="{{ file.path|resolve_url(filter.filesystem) }}" alt="{{ file.name }}" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+			{% elseif type == 'video' %}
+				<i class="bi bi-file-earmark-play" style="font-size: 3rem;"></i>
+			{% elseif type == 'audio' %}
+				<i class="bi bi-file-earmark-music" style="font-size: 3rem;"></i>
+			{% endif %}
+		</div>
+	{% else %}
+		{% set icons = {
+            'application/pdf': 'bi bi-file-earmark-pdf',
+            'application/msword': 'bi bi-file-earmark-word',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'bi bi-file-earmark-word',
+            'application/vnd.ms-excel': 'bi bi-file-earmark-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'bi bi-file-earmark-excel',
+            'application/zip': 'bi bi-file-earmark-zip',
+            'text/plain': 'bi bi-file-earmark-text',
+        } %}
+		{% set icon_class = icons[mime] ?? 'bi bi-file-earmark' %}
+		<div class="d-flex align-items-center justify-content-center w-100 h-100">
+			<i class="{{ icon_class }}" style="font-size: 3rem;"></i>
+		</div>
+	{% endif %}
+</div>

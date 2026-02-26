@@ -1,0 +1,17 @@
+{
+  "name": "keyboardman-filemanager-bundle",
+  "private": true,
+  "scripts": {
+    "build": "vite build && vite build --mode field",
+    "dev": "vite build --watch",
+    "watch": "vite build --watch",
+    "watch-field": "vite build --mode field --watch"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1"
+  }
+}

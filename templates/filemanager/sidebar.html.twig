@@ -1,0 +1,25 @@
+<aside class="bg-light p-3 border-end" style="width: 250px;">
+	<ul
+		class="nav flex-column">
+		{# Lien pour remonter d'un niveau si on n'est pas à la racine #}
+		{% if filter.path != '' %}
+			{% set parentPath = filter.path|trim('/', 'right')|split('/')|slice(0, -1)|join('/') %}
+			<li class="nav-item">
+				<a class="nav-link" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': parentPath})) }}">
+					<i class="bi bi-folder-fill text-warning me-2"></i>
+					..
+				</a>
+			</li>
+		{% endif %}
+
+		{% for directory in directories %}
+
+			<li class="nav-item">
+				<a class="nav-link" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': directory.path})) }}">
+					<i class="bi bi-folder-fill text-warning me-2"></i>
+					{{ directory.name }}
+				</a>
+			</li>
+		{% endfor %}
+	</ul>
+</aside>

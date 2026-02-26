@@ -1,0 +1,23 @@
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="previewModalTitle"></h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body text-center">
+				<img id="previewModalImage" src="" class="img-fluid d-none" style="max-height: 80vh; object-fit: contain;">
+
+				<video id="previewModalVideo" class="img-fluid d-none" controls autoplay style="max-height: 80vh; object-fit: contain;">
+					<source src="" type="video/mp4">
+					Your browser does not support the video tag.
+				</video>
+
+				<audio id="previewModalAudio" class="d-none" controls autoplay style="width: 100%;">
+					<source src="" type="audio/mpeg">
+					Your browser does not support the audio element.
+				</audio>
+			</div>
+		</div>
+	</div>
+</div>

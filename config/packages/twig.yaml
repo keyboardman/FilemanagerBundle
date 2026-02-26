@@ -1,0 +1,3 @@
+twig:
+  form_themes:
+    - "@KeyboardmanFilemanager/form/filemanager_widget.html.twig"
