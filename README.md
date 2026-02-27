@@ -34,29 +34,6 @@ Dans le `composer.json` du projet, ajoutez le dépôt puis installez :
 composer update keyboardman/filemanager-bundle
 ```
 
-**Depuis Packagist** (si le package y est publié) :
-
-```bash
-composer require keyboardman/filemanager-bundle
-```
-
-**En développement local (dépôt path)** :
-
-```json
-{
-    "repositories": [
-        { "type": "path", "url": "./bundle/Keyboardman/FilemanagerBundle" }
-    ],
-    "require": {
-        "keyboardman/filemanager-bundle": "^0.1.0"
-    }
-}
-```
-
-```bash
-composer update keyboardman/filemanager-bundle
-```
-
 Le filemanager a besoin de **Flysystem** pour le stockage. Si ce n’est pas déjà le cas, installez le bundle officiel :
 
 ```bash
@@ -86,20 +63,7 @@ keyboardman_filemanager_bundle_routes:
 
 Le filemanager sera alors accessible sur la route nommée `keyboardman_filemanager` (ex. `/kbd/filemanager`).
 
-### 4. Asset Mapper
 
-Le bundle enregistre lui‑même son répertoire d’assets (`dist/`) dans l’Asset Mapper via sa configuration. Si vous rencontrez des conflits ou que les assets du filemanager ne sont pas trouvés, vérifiez `config/packages/asset_mapper.yaml` (ou la section `framework.asset_mapper` dans `framework.yaml`) et **commentez** la clé `paths` si vous n’exposez pas d’autres assets d’application :
-
-```yaml
-# config/packages/asset_mapper.yaml (ou framework.yaml)
-framework:
-    asset_mapper:
-        # The paths to make available to the asset mapper.
-        # paths:
-        #    - assets/
-```
-
-Ainsi, seuls les paths ajoutés par les bundles (dont le filemanager) sont utilisés. Si vous avez besoin des assets de votre application, laissez `paths` actif et assurez-vous que le bundle est bien chargé pour que son path soit prépendu.
 
 ---
 
@@ -161,11 +125,13 @@ keyboardman_filemanager:
 
 À définir dans votre `.env` (ou `.env.local`) :
 
-| Variable | Description |
-|----------|-------------|
-| `DEFAULT_URI` | URL de base de l’application (ex. `https://example.com`). Utilisée pour construire les URIs des fichiers quand `default_uri` est configuré. |
-| `FILEMANAGER_TOKEN_ENABLED` | Si `true`, active la vérification par token pour l’accès au filemanager en iframe (cross-domain). |
-| `FILEMANAGER_TOKENS` | Chemin vers un fichier JSON listant les tokens par domaine (voir ci-dessous). Utilisé quand `FILEMANAGER_TOKEN_ENABLED` est activé. |
+
+| Variable                    | Description                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFAULT_URI`               | URL de base de l’application (ex. `https://example.com`). Utilisée pour construire les URIs des fichiers quand `default_uri` est configuré. |
+| `FILEMANAGER_TOKEN_ENABLED` | Si `true`, active la vérification par token pour l’accès au filemanager en iframe (cross-domain).                                           |
+| `FILEMANAGER_TOKENS`        | Chemin vers un fichier JSON listant les tokens par domaine (voir ci-dessous). Utilisé quand `FILEMANAGER_TOKEN_ENABLED` est activé.         |
+
 
 ### Fichier JSON des tokens (`FILEMANAGER_TOKENS`)
 
@@ -203,27 +169,6 @@ Exemple de sortie : `a1b2c3d4e5f6...`. Utilisez cette valeur comme valeur dans `
 
 ---
 
-## Build des assets
-
-Les assets du filemanager (JavaScript et CSS) sont buildés avec **Vite**. À la racine du bundle :
-
-```bash
-cd vendor/keyboardman/filemanager-bundle
-# ou, en développement local :
-# cd bundle/Keyboardman/FilemanagerBundle
-
-npm install
-npm run build
-```
-
-- `npm run build` : build de l’app filemanager complète (`filemanager.js`) et du widget modal (`filemanager-field.js`).
-- `npm run dev` ou `npm run watch` : build en mode watch pour le filemanager principal.
-- `npm run watch-field` : build en mode watch pour le widget field.
-
-Les fichiers générés sont dans `public/assets/` du bundle (puis exposés via Asset Mapper). En production, assurez-vous que les assets sont installés (ex. `php bin/console asset-map:compile` selon votre setup).
-
----
-
 ## Utilisation dans un formulaire
 
 ### FilemanagerType
@@ -257,11 +202,13 @@ class MyContentType extends AbstractType
 
 Options du `FilemanagerType` :
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `crossdomain` | `bool` | À `true` si l’iframe est chargée en cross-domain (nécessite la gestion des tokens si activée). |
-| `media` | `string\|null` | Filtre de type de médias (ex. `image`, `video`). |
-| `token` | `string\|null` | Token passé en query pour l’accès au filemanager en iframe. |
+
+| Option        | Type          | Description                                                                                    |
+| ------------- | ------------- | ---------------------------------------------------------------------------------------------- |
+| `crossdomain` | `bool`        | À `true` si l’iframe est chargée en cross-domain (nécessite la gestion des tokens si activée). |
+| `media`       | `string|null` | Filtre de type de médias (ex. `image`, `video`).                                               |
+| `token`       | `string|null` | Token passé en query pour l’accès au filemanager en iframe.                                    |
+
 
 Le champ rend un input texte (valeur = chemin ou URI du fichier) et un bouton « Parcourir » qui ouvre le filemanager dans un modal.
 
@@ -313,19 +260,16 @@ Cet exemple contient :
 
 ## Exemple complet
 
-1. **Configuration**  
-   - `config/packages/flysystem.yaml` : storages `default.storage` et `public.storage`.  
-   - `config/packages/keyboardman_filemanager.yaml` : disks `default` et `public` pointant vers ces storages.  
-   - `.env` : `DEFAULT_URI`, optionnellement `FILEMANAGER_TOKEN_ENABLED` et `FILEMANAGER_TOKENS`.
+1. **Configuration**
+  - `config/packages/flysystem.yaml` : storages `default.storage` et `public.storage`.  
+  - `config/packages/keyboardman_filemanager.yaml` : disks `default` et `public` pointant vers ces storages.  
+  - `.env` : `DEFAULT_URI`, optionnellement `FILEMANAGER_TOKEN_ENABLED` et `FILEMANAGER_TOKENS`.
+2. **Formulaire**
+  - Champ avec `FilemanagerType::class` et options si besoin (`crossdomain`, `media`, `token`).
+3. **Template**
+  - Afficher le formulaire avec `{{ form(form) }}`.  
+  - Inclure `{% include '@KeyboardmanFilemanager/iframe/modal.html.twig' %}`.
 
-2. **Formulaire**  
-   - Champ avec `FilemanagerType::class` et options si besoin (`crossdomain`, `media`, `token`).
 
-3. **Template**  
-   - Afficher le formulaire avec `{{ form(form) }}`.  
-   - Inclure `{% include '@KeyboardmanFilemanager/iframe/modal.html.twig' %}`.
-
-4. **Assets**  
-   - Builder les assets du bundle avec `npm run build` dans le répertoire du bundle, et s’assurer que l’application expose bien les assets (Asset Mapper / `asset-map:compile` si utilisé).
 
 Après avoir sélectionné un fichier dans le filemanager, la valeur du champ (chemin ou URI) est enregistrée dans l’input du formulaire et envoyée à la soumission.

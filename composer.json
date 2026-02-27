@@ -21,8 +21,7 @@
         "issues": "https://github.com/keyboardman/FilemanagerBundle/issues"
     },
     "require": {
-        "php": ">=8.2",
-        "symfony/asset-mapper": "^8.0"
+        "php": ">=8.2"
     },
     "autoload": {
         "psr-4": {
