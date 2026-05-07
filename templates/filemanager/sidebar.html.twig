@@ -13,12 +13,20 @@
 		{% endif %}
 
 		{% for directory in directories %}
-
-			<li class="nav-item">
-				<a class="nav-link" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': directory.path})) }}">
+			<li class="nav-item d-flex align-items-center justify-content-between">
+				<a class="nav-link flex-grow-1" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': directory.path})) }}">
 					<i class="bi bi-folder-fill text-warning me-2"></i>
 					{{ directory.name }}
 				</a>
+				<button
+					class="btn btn-sm btn-link text-secondary file-rename"
+					type="button"
+					title="Renommer le dossier"
+					data-path="{{ directory.path }}"
+					data-name="{{ directory.name }}"
+				>
+					<i class="bi bi-pencil"></i>
+				</button>
 			</li>
 		{% endfor %}
 	</ul>
