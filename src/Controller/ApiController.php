@@ -140,4 +140,74 @@ class ApiController extends AbstractController
             ], 500);
         }
     }
+
+    #[Route('/delete-file', name: 'keyboardman_filemanager_api_delete_file', methods: ['POST'])]
+    public function deleteFile(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $filesystem = $data['filesystem'] ?? null;
+        $path = $data['path'] ?? null;
+
+        if (!is_string($filesystem) || !is_string($path)) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Paramètres invalides.',
+            ], 400);
+        }
+
+        try {
+            $this->diskManager->deleteFile($filesystem, $path);
+
+            return new JsonResponse([
+                'success' => true,
+                'path' => $path,
+            ]);
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 400);
+        } catch (\Throwable $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    #[Route('/delete-directory', name: 'keyboardman_filemanager_api_delete_directory', methods: ['POST'])]
+    public function deleteDirectory(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $filesystem = $data['filesystem'] ?? null;
+        $path = $data['path'] ?? null;
+
+        if (!is_string($filesystem) || !is_string($path)) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Paramètres invalides.',
+            ], 400);
+        }
+
+        try {
+            $this->diskManager->deleteEmptyDirectory($filesystem, $path);
+
+            return new JsonResponse([
+                'success' => true,
+                'path' => $path,
+            ]);
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 400);
+        } catch (\Throwable $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

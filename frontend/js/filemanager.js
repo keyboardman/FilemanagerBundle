@@ -4,6 +4,7 @@ import fileUpload from "./components/file-upload";
 import fileCreateDirectory from "./components/file-create-directory";
 import modalPreview from "./components/modal-preview";
 import modalRename from "./components/modal-rename";
+import modalDelete from "./components/modal-delete";
 import filesystemSelect from "./components/filesystem-select";
 import mediaFilter from "./components/media-filter";
 import mediaSort from "./components/media-sort";
@@ -24,6 +25,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const uploadUrl = app.dataset.uploadUrl;
     const renameUrl = app.dataset.renameUrl;
     const createDirectoryUrl = app.dataset.createDirectoryUrl;
+    const deleteFileUrl = app.dataset.deleteFileUrl;
+    const deleteDirectoryUrl = app.dataset.deleteDirectoryUrl;
     const currentFilesystem = app.dataset.filesystem;
     const currentPath = app.dataset.path;
 
@@ -50,4 +53,5 @@ document.addEventListener("DOMContentLoaded", function () {
 
     modalPreview(bootstrap);
     modalRename(bootstrap, renameUrl, currentFilesystem);
+    modalDelete(bootstrap, currentFilesystem, deleteFileUrl, deleteDirectoryUrl);
 });

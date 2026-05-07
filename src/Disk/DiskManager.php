@@ -234,6 +234,50 @@ class DiskManager
         }
     }
 
+    public function deleteFile(string $filesystem, string $path): void
+    {
+        $normalizedPath = trim($path, '/');
+        if ('' === $normalizedPath) {
+            throw new \InvalidArgumentException('Le chemin du fichier est invalide.');
+        }
+
+        try {
+            $fs = $this->disk($filesystem)->filesystem();
+
+            if (!$fs->fileExists($normalizedPath)) {
+                throw new \RuntimeException('Le fichier cible est introuvable.');
+            }
+
+            $fs->delete($normalizedPath);
+        } catch (FilesystemException $e) {
+            throw new \RuntimeException('Erreur lors de la suppression du fichier : '.$e->getMessage(), previous: $e);
+        }
+    }
+
+    public function deleteEmptyDirectory(string $filesystem, string $path): void
+    {
+        $normalizedPath = trim($path, '/');
+        if ('' === $normalizedPath) {
+            throw new \InvalidArgumentException('Le chemin du dossier est invalide.');
+        }
+
+        try {
+            $fs = $this->disk($filesystem)->filesystem();
+
+            if (!$fs->directoryExists($normalizedPath)) {
+                throw new \RuntimeException('Le dossier cible est introuvable.');
+            }
+
+            foreach ($fs->listContents($normalizedPath, false) as $_item) {
+                throw new \RuntimeException('Le dossier doit être vide pour être supprimé.');
+            }
+
+            $fs->deleteDirectory($normalizedPath);
+        } catch (FilesystemException $e) {
+            throw new \RuntimeException('Erreur lors de la suppression du dossier : '.$e->getMessage(), previous: $e);
+        }
+    }
+
     public function publicUrl(string $filesystem, string $path): string
     {
         $disk = $this->disk($filesystem);

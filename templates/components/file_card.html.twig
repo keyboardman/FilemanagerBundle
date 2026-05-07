@@ -10,6 +10,9 @@
 		<button class="btn btn-sm btn-outline-secondary file-rename" data-path="{{ file.path }}" data-name="{{ file.name }}">
 			<i class="bi bi-pencil"></i>
 		</button>
+		<button class="btn btn-sm btn-outline-danger file-delete" type="button" data-type="file" data-path="{{ file.path }}" data-name="{{ file.name }}">
+			<i class="bi bi-trash"></i>
+		</button>
 		{% if filter.mode == 'iframe' %}
 			<button class="btn btn-sm btn-primary select-file-btn" data-path="{{ file.path|resolve_url(filter.filesystem) }}" data-target="{{filter.target}}">
 				<i class="bi-hand-index-thumb"></i>
