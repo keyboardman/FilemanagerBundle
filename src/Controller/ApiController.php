@@ -75,18 +75,69 @@ class ApiController extends AbstractController
         $oldPath = $data['path'] ?? null;
         $newName = $data['newName'] ?? null;
 
+        if (!is_string($filesystem) || !is_string($oldPath) || !is_string($newName)) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Paramètres invalides.',
+            ], 400);
+        }
+
         try {
             $this->diskManager->rename($filesystem, $oldPath, $newName);
 
             return new JsonResponse([
                 'success' => true,
                 'message' => 'Fichier renommé avec succès',
+                'path' => $oldPath,
+                'newName' => $newName,
             ]);
-        } catch (\Throwable $e) {
+        } catch (\InvalidArgumentException $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage(),
             ], 400);
+        } catch (\Throwable $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    #[Route('/create-directory', name: 'keyboardman_filemanager_api_create_directory', methods: ['POST'])]
+    public function createDirectory(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $filesystem = $data['filesystem'] ?? null;
+        $parentPath = $data['path'] ?? '';
+        $directoryName = $data['name'] ?? null;
+
+        if (!is_string($filesystem) || !is_string($parentPath) || !is_string($directoryName)) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Paramètres invalides.',
+            ], 400);
+        }
+
+        try {
+            $newPath = $this->diskManager->createDirectory($filesystem, $parentPath, $directoryName);
+
+            return new JsonResponse([
+                'success' => true,
+                'path' => $newPath,
+                'name' => trim($directoryName),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 400);
+        } catch (\Throwable $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 }

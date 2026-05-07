@@ -189,6 +189,8 @@ class DiskManager
             $directory = pathinfo($oldPath, PATHINFO_DIRNAME);
             $directory = '.' === $directory ? '' : $directory;
 
+            $this->assertValidDirectoryName($newName);
+
             $newPath = ltrim($directory.'/'.$newName, '/');
 
             // Vérifier si le nouveau nom existe déjà
@@ -202,6 +204,33 @@ class DiskManager
             return true;
         } catch (FilesystemException $e) {
             throw new \RuntimeException('Erreur lors du renommage : '.$e->getMessage());
+        }
+    }
+
+    public function createDirectory(string $filesystem, string $parentPath, string $directoryName): string
+    {
+        $this->assertValidDirectoryName($directoryName);
+
+        try {
+            $disk = $this->disk($filesystem);
+            $fs = $disk->filesystem();
+
+            $parentPath = trim($parentPath, '/');
+            $newPath = ltrim(trim($parentPath.'/'.$directoryName, '/'), '/');
+
+            if ('' === $newPath) {
+                throw new \InvalidArgumentException('Le chemin du dossier est invalide.');
+            }
+
+            if ($fs->fileExists($newPath) || $fs->directoryExists($newPath)) {
+                throw new \RuntimeException('Un fichier ou dossier avec ce nom existe déjà.');
+            }
+
+            $fs->createDirectory($newPath);
+
+            return rtrim($newPath, '/').'/';
+        } catch (FilesystemException $e) {
+            throw new \RuntimeException('Erreur lors de la création du dossier : '.$e->getMessage(), previous: $e);
         }
     }
 
@@ -241,5 +270,24 @@ class DiskManager
         $basename = basename($key);
 
         return '' !== $basename && str_starts_with($basename, self::HIDDEN_PREFIX);
+    }
+
+    private function assertValidDirectoryName(string $name): void
+    {
+        $trimmed = trim($name);
+
+        if ('' === $trimmed) {
+            throw new \InvalidArgumentException('Le nom du dossier ne peut pas être vide.');
+        }
+
+        if (in_array($trimmed, ['.', '..'], true)) {
+            throw new \InvalidArgumentException('Le nom du dossier est invalide.');
+        }
+
+        if (str_contains($trimmed, '/')
+            || str_contains($trimmed, '\\')
+            || preg_match('/[\x00-\x1F]/', $trimmed)) {
+            throw new \InvalidArgumentException('Le nom du dossier contient des caractères interdits.');
+        }
     }
 }

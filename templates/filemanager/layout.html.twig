@@ -31,7 +31,7 @@
 		{% endblock %}
 		{% include '@KeyboardmanFilemanager/components/modal_media.html.twig' %}
 		{% include '@KeyboardmanFilemanager/components/modal_rename.html.twig' %}
-		<div id="filemanager-app" data-upload-url="{{ path('keyboardman_filemanager_api_upload') }}" data-rename-url="{{ path('keyboardman_filemanager_api_rename') }}" data-filesystem="{{ filter.filesystem }}" data-path="{{ filter.path }}" data-field-target={{filter.target}} data-mode="{{filter.mode}}" data-crossdomain="{{filter.crossdomain}}"></div>
+		<div id="filemanager-app" data-upload-url="{{ path('keyboardman_filemanager_api_upload') }}" data-rename-url="{{ path('keyboardman_filemanager_api_rename') }}" data-create-directory-url="{{ path('keyboardman_filemanager_api_create_directory') }}" data-filesystem="{{ filter.filesystem }}" data-path="{{ filter.path }}" data-field-target={{filter.target}} data-mode="{{filter.mode}}" data-crossdomain="{{filter.crossdomain}}"></div>
 		<script src="{{ asset('bundles/keyboardmanfilemanager/filemanager.js') }}"></script>
 	</body>
 </html>

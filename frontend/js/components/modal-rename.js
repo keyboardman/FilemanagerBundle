@@ -26,7 +26,11 @@ export default function modalRename(bootstrap, renameUrl, currentFilesystem) {
     // Confirmer rename
     confirmRenameBtn.addEventListener("click", async () => {
         const newName = renameInput.value.trim();
-        if (!newName || !currentRenamePath) return;
+        if (!newName) {
+            alert("Le nom du dossier ne peut pas être vide.");
+            return;
+        }
+        if (!currentRenamePath) return;
 
         try {
             const response = await fetch(renameUrl, {
@@ -44,7 +48,7 @@ export default function modalRename(bootstrap, renameUrl, currentFilesystem) {
 
             const result = await response.json();
 
-            if (result.success) {
+            if (response.ok && result.success) {
                 renameModal.hide();
                 location.reload();
             } else {

@@ -1,6 +1,7 @@
 import * as bootstrap from "bootstrap";
 import fileSelect from "./components/file-select";
 import fileUpload from "./components/file-upload";
+import fileCreateDirectory from "./components/file-create-directory";
 import modalPreview from "./components/modal-preview";
 import modalRename from "./components/modal-rename";
 import filesystemSelect from "./components/filesystem-select";
@@ -22,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const uploadUrl = app.dataset.uploadUrl;
     const renameUrl = app.dataset.renameUrl;
+    const createDirectoryUrl = app.dataset.createDirectoryUrl;
     const currentFilesystem = app.dataset.filesystem;
     const currentPath = app.dataset.path;
 
@@ -44,6 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
     mediaSort();
 
     fileUpload(currentFilesystem, currentPath, uploadUrl);
+    fileCreateDirectory(currentFilesystem, currentPath, createDirectoryUrl);
 
     modalPreview(bootstrap);
     modalRename(bootstrap, renameUrl, currentFilesystem);
