@@ -273,3 +273,31 @@ Cet exemple contient :
 
 
 Après avoir sélectionné un fichier dans le filemanager, la valeur du champ (chemin ou URI) est enregistrée dans l’input du formulaire et envoyée à la soumission.
+
+---
+
+## Tests
+
+Le bundle fournit deux suites de tests pour l’upload média XHR :
+
+### Tests PHP (PHPUnit)
+
+```bash
+composer install
+composer test
+```
+
+Couverture :
+- `UploadLimitResolver` et `ChunkUploadManager` (unitaires)
+- `POST /api/filemanager/upload` et `/upload-chunk` (fonctionnels via kernel de test)
+
+### Tests JavaScript (Vitest)
+
+```bash
+npm install
+npm test
+```
+
+Couverture :
+- Helpers d’upload (`frontend/js/upload/helpers.js`)
+- Contrôleur Stimulus `filemanager-upload` (file d’attente, bascule monolithique/fragmenté, progression, erreurs, `beforeunload`)

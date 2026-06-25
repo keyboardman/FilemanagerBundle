@@ -1,4 +1,6 @@
 <main class="flex-grow-1 p-3">
+	{% include '@KeyboardmanFilemanager/components/upload_dropzone.html.twig' %}
+
 	<div class="row row-cols-1 row-cols-md-6 g-3">
 		{% for file in files %}
 			<div class="col">

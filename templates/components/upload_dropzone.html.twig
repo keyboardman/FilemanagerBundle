@@ -1,0 +1,34 @@
+<div
+	data-controller="filemanager-upload"
+	data-filemanager-upload-upload-url-value="{{ path('keyboardman_filemanager_api_upload') }}"
+	data-filemanager-upload-upload-chunk-url-value="{{ path('keyboardman_filemanager_api_upload_chunk') }}"
+	data-filemanager-upload-filesystem-value="{{ filter.filesystem }}"
+	data-filemanager-upload-path-value="{{ filter.path }}"
+	data-filemanager-upload-chunk-size-value="{{ chunk_size }}"
+	data-filemanager-upload-chunk-threshold-value="{{ chunk_threshold }}"
+>
+	<div
+		class="dropzone-container mb-3"
+		data-controller="symfony--ux-dropzone--dropzone"
+	>
+		<input
+			type="file"
+			class="dropzone-input"
+			accept="image/*,video/*"
+			multiple
+			data-symfony--ux-dropzone--dropzone-target="input"
+		/>
+
+		<div class="dropzone-placeholder" data-symfony--ux-dropzone--dropzone-target="placeholder">
+			Glissez-déposez des images ou vidéos ici, ou cliquez pour sélectionner
+		</div>
+
+		<div class="dropzone-preview" data-symfony--ux-dropzone--dropzone-target="preview" style="display: none">
+			<button class="dropzone-preview-button" type="button" data-symfony--ux-dropzone--dropzone-target="previewClearButton"></button>
+			<div class="dropzone-preview-image" style="display: none" data-symfony--ux-dropzone--dropzone-target="previewImage"></div>
+			<div data-symfony--ux-dropzone--dropzone-target="previewFilename" class="dropzone-preview-filename"></div>
+		</div>
+	</div>
+
+	<div data-filemanager-upload-target="progressContainer" class="upload-progress-list mb-3"></div>
+</div>

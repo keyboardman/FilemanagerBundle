@@ -6,6 +6,9 @@ use League\Flysystem\FilesystemOperator;
 
 class Disk
 {
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(
         private string $name,
         private string $label,

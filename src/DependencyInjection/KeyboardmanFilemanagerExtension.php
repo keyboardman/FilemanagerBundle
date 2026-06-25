@@ -32,6 +32,9 @@ class KeyboardmanFilemanagerExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
+        $container->setParameter('keyboardman_filemanager.upload.chunk_size', $config['upload']['chunk_size']);
+        $container->setParameter('keyboardman_filemanager.upload.chunk_threshold', $config['upload']['chunk_threshold']);
+
         foreach ($config['disks'] as $name => $diskConfig) {
             $container
                 ->register("keyboardman_filemanager.disk.{$name}", Disk::class)
@@ -47,10 +50,6 @@ class KeyboardmanFilemanagerExtension extends Extension
 
         $rawTokens = $container->getParameterBag()->resolveValue('%env(FILEMANAGER_TOKENS)%');
         $tokens = is_string($rawTokens) ? array_map('trim', explode(',', $rawTokens)) : [];
-
-        if (is_string($tokens)) {
-            $tokens = array_map('trim', explode(',', $tokens));
-        }
 
         if (!empty($tokens)) {
             $container->setParameter('keyboardman_filemanager.iframe.tokens', $tokens);

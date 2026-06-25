@@ -13,9 +13,10 @@
 		<button class="btn btn-sm btn-outline-danger file-delete" type="button" data-type="file" data-path="{{ file.path }}" data-name="{{ file.name }}">
 			<i class="bi bi-trash"></i>
 		</button>
-		{% if filter.mode == 'iframe' %}
-			<button class="btn btn-sm btn-primary select-file-btn" data-path="{{ file.path|resolve_url(filter.filesystem) }}" data-target="{{filter.target}}">
-				<i class="bi-hand-index-thumb"></i>
+		{% if filter.mode == 'iframe' or filter.target %}
+			<button type="button" class="btn btn-sm btn-primary select-file-btn" data-path="{{ file.path|resolve_url(filter.filesystem, true) }}" data-target="{{ filter.target }}" title="Sélectionner">
+				<i class="bi bi-hand-index-thumb"></i>
+				<span class="d-none d-md-inline">Sélectionner</span>
 			</button>
 		{% endif %}
 	</div>

@@ -5,6 +5,7 @@ namespace Keyboardman\FilemanagerBundle\Controller;
 use Keyboardman\FilemanagerBundle\Disk\DiskManager;
 use Keyboardman\FilemanagerBundle\DTO\QueryFilterFactory;
 use Keyboardman\FilemanagerBundle\Security\IframeTokenValidator;
+use Keyboardman\FilemanagerBundle\Upload\UploadLimitResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,8 +13,13 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class FilemanagerController extends AbstractController
 {
-    public function __construct(private readonly DiskManager $diskManager, private readonly QueryFilterFactory $queryFactory)
-    {
+    public function __construct(
+        private readonly DiskManager $diskManager,
+        private readonly QueryFilterFactory $queryFactory,
+        private readonly UploadLimitResolver $uploadLimitResolver,
+        private readonly int $chunkSize,
+        private readonly int $chunkThreshold,
+    ) {
     }
 
     #[Route('/kbd/filemanager', name: 'keyboardman_filemanager')]
@@ -45,6 +51,8 @@ class FilemanagerController extends AbstractController
 
         $paths = array_values(array_filter(explode('/', $query->path)));
 
+        $uploadLimits = $this->uploadLimitResolver->resolve($this->chunkSize, $this->chunkThreshold);
+
         return $this->render('@KeyboardmanFilemanager/filemanager/layout.html.twig',
             [
                 'filesystems' => $this->diskManager->all(),
@@ -52,6 +60,8 @@ class FilemanagerController extends AbstractController
                 'directories' => $directories,
                 'files' => $files,
                 'paths' => $paths,
+                'chunk_size' => $uploadLimits['chunk_size'],
+                'chunk_threshold' => $uploadLimits['chunk_threshold'],
             ]
         );
     }

@@ -4,6 +4,7 @@ namespace Keyboardman\FilemanagerBundle\Controller;
 
 use Keyboardman\FilemanagerBundle\Disk\DiskManager;
 use Keyboardman\FilemanagerBundle\DTO\QueryFilterFactory;
+use Keyboardman\FilemanagerBundle\Upload\ChunkUploadManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,8 +14,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/filemanager')]
 class ApiController extends AbstractController
 {
-    public function __construct(private readonly DiskManager $diskManager)
-    {
+    public function __construct(
+        private readonly DiskManager $diskManager,
+        private readonly ChunkUploadManager $chunkUploadManager,
+    ) {
     }
 
     #[Route('/list', name: 'keyboardman_filemanager_api_list')]
@@ -63,6 +66,55 @@ class ApiController extends AbstractController
             ]);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/upload-chunk', name: 'keyboardman_filemanager_api_upload_chunk', methods: ['POST'])]
+    public function uploadChunk(Request $request): JsonResponse
+    {
+        /** @var UploadedFile|null $chunk */
+        $chunk = $request->files->get('chunk');
+        $uploadId = $request->request->get('uploadId');
+        $chunkIndex = $request->request->get('chunkIndex');
+        $totalChunks = $request->request->get('totalChunks');
+        $totalSize = $request->request->get('totalSize');
+        $filename = $request->request->get('filename');
+        $filesystem = $request->request->get('filesystem', 'default');
+        $path = $request->request->get('path', '/');
+
+        if (!$chunk instanceof UploadedFile) {
+            return new JsonResponse(['success' => false, 'error' => 'Aucun fragment reçu.'], 400);
+        }
+
+        if (
+            !is_string($uploadId)
+            || !is_numeric($chunkIndex)
+            || !is_numeric($totalChunks)
+            || !is_numeric($totalSize)
+            || !is_string($filename)
+            || !is_string($filesystem)
+            || !is_string($path)
+        ) {
+            return new JsonResponse(['success' => false, 'error' => 'Paramètres invalides.'], 400);
+        }
+
+        try {
+            $result = $this->chunkUploadManager->receiveChunk(
+                $uploadId,
+                (int) $chunkIndex,
+                (int) $totalChunks,
+                (int) $totalSize,
+                $filename,
+                $filesystem,
+                $path,
+                $chunk,
+            );
+
+            return new JsonResponse($result);
+        } catch (\InvalidArgumentException $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -163,7 +215,7 @@ class ApiController extends AbstractController
                 'success' => true,
                 'path' => $path,
             ]);
-        } catch (\InvalidArgumentException | \RuntimeException $e) {
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -198,7 +250,7 @@ class ApiController extends AbstractController
                 'success' => true,
                 'path' => $path,
             ]);
-        } catch (\InvalidArgumentException | \RuntimeException $e) {
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage(),

@@ -5,7 +5,7 @@ namespace Keyboardman\FilemanagerBundle\Disk;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemException;
-use League\Flysystem\StorageAttributes;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class DiskManager
 {
@@ -24,8 +24,13 @@ class DiskManager
         'txt' => 'text/plain', 'json' => 'application/json', 'pdf' => 'application/pdf',
     ];
 
-    public function __construct(iterable $disks)
-    {
+    /**
+     * @param iterable<Disk> $disks
+     */
+    public function __construct(
+        iterable $disks,
+        private readonly UrlGeneratorInterface $urlGenerator,
+    ) {
         foreach ($disks as $disk) {
             $this->disks[$disk->getName()] = $disk;
         }
@@ -40,11 +45,17 @@ class DiskManager
         return $this->disks[$name];
     }
 
+    /**
+     * @return array<string, Disk>
+     */
     public function all(): array
     {
         return $this->disks;
     }
 
+    /**
+     * @return list<string>
+     */
     public function names(): array
     {
         return array_keys($this->disks);
@@ -55,6 +66,9 @@ class DiskManager
         return isset($this->disks[$name]);
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function list(string $filesystem, string $path, ?string $media = null, string $sort = 'name_asc'): array
     {
         $fs = $this->disk($filesystem)->filesystem();
@@ -63,8 +77,6 @@ class DiskManager
 
         try {
             foreach ($fs->listContents($path, false) as $item) {
-                \assert($item instanceof StorageAttributes);
-
                 $itemPath = $item->path();
 
                 // ✅ Ignorer fichiers et dossiers cachés
@@ -75,9 +87,8 @@ class DiskManager
                 $allowedMedia = ['image', 'audio', 'video'];
 
                 if ($item instanceof FileAttributes) {
-                    $mimeType = $item->mimeType() ?? $this->mimeTypeFromExtension($itemPath);
+                    $mimeType = $this->resolveMimeType($filesystem, $itemPath, $item->mimeType());
 
-                    // Déterminer le type de média
                     if (str_starts_with($mimeType, 'image/')) {
                         $type = 'image';
                     } elseif (str_starts_with($mimeType, 'audio/')) {
@@ -110,6 +121,8 @@ class DiskManager
                         'name' => basename(rtrim($dirPath, '/')),
                         'type' => 'dir',
                     ];
+                } else {
+                    continue;
                 }
 
                 $items[] = $file;
@@ -143,7 +156,7 @@ class DiskManager
         }
 
         $filename = $newFilename ?? basename($localFilePath);
-        $targetPath = rtrim($path, '/').'/'.$filename;
+        $targetPath = ltrim(rtrim($path, '/').'/'.$filename, '/');
 
         // Déterminer le mime type
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
@@ -281,25 +294,33 @@ class DiskManager
     public function publicUrl(string $filesystem, string $path): string
     {
         $disk = $this->disk($filesystem);
-
-        $fs = $disk->filesystem();
-
         $path = ltrim($path, '/');
 
-        // ✅ 1. priorité : config du disk
         if ($base = $disk->getDefaultUri()) {
             return rtrim($base, '/').'/'.$path;
         }
 
-        if (method_exists($fs, 'publicUrl')) {
-            try {
-                return $fs->publicUrl($path);
-            } catch (\Throwable) {
-            }
+        return $this->urlGenerator->generate('keyboardman_filemanager_media', [
+            'filesystem' => $filesystem,
+            'path' => $path,
+        ]);
+    }
+
+    public function resolveMimeType(string $filesystem, string $path, ?string $detectedMimeType = null): string
+    {
+        if (is_string($detectedMimeType) && '' !== $detectedMimeType) {
+            return $detectedMimeType;
         }
 
-        // Fallback simple : servir depuis public/
-        return '/'.$path;
+        try {
+            $mimeType = $this->disk($filesystem)->filesystem()->mimeType(ltrim($path, '/'));
+            if ('' !== $mimeType) {
+                return $mimeType;
+            }
+        } catch (FilesystemException) {
+        }
+
+        return $this->mimeTypeFromExtension($path) ?? 'application/octet-stream';
     }
 
     private function mimeTypeFromExtension(string $path): ?string

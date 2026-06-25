@@ -6,6 +6,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 class IframeTokenValidator
 {
+    /**
+     * @param array<string, string> $hostTokens
+     */
     public function __construct(
         private readonly bool $verify,
         private readonly array $hostTokens,
@@ -36,10 +39,6 @@ class IframeTokenValidator
         $token = $request->query->get('token');
 
         if (!$token) {
-            return false;
-        }
-
-        if (!isset($this->hostTokens[$host])) {
             return false;
         }
 

@@ -60,6 +60,19 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('upload')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->integerNode('chunk_size')
+                            ->defaultValue(1024 * 1024)
+                            ->info('Taille maximale de chaque fragment en octets (défaut 1 Mo, plafonnée par upload_max_filesize)')
+                        ->end()
+                        ->integerNode('chunk_threshold')
+                            ->defaultValue(1024 * 1024)
+                            ->info('Seuil au-delà duquel l\'upload fragmenté est utilisé (défaut 1 Mo, plafonné par upload_max_filesize)')
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;

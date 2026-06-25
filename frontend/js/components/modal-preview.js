@@ -17,20 +17,24 @@ export default function modalPreview(bootstrap) {
 
             modalTitle.textContent = name;
 
-            // Masquer tous les médias
             modalImage.classList.add("d-none");
             modalVideo.classList.add("d-none");
             modalAudio.classList.add("d-none");
+            modalImage.removeAttribute("src");
+            modalVideo.pause();
+            modalVideo.removeAttribute("src");
+            modalAudio.pause();
+            modalAudio.removeAttribute("src");
 
             if (type === "image") {
                 modalImage.src = file;
                 modalImage.classList.remove("d-none");
             } else if (type === "video") {
-                modalVideo.querySelector("source").src = file;
+                modalVideo.src = file;
                 modalVideo.load();
                 modalVideo.classList.remove("d-none");
             } else if (type === "audio") {
-                modalAudio.querySelector("source").src = file;
+                modalAudio.src = file;
                 modalAudio.load();
                 modalAudio.classList.remove("d-none");
             }
@@ -39,7 +43,6 @@ export default function modalPreview(bootstrap) {
         });
     });
 
-    // Quand la modal se ferme, stopper la lecture et remettre à zéro
     document
         .getElementById("previewModal")
         .addEventListener("hidden.bs.modal", () => {
@@ -47,5 +50,8 @@ export default function modalPreview(bootstrap) {
             modalAudio.pause();
             modalVideo.currentTime = 0;
             modalAudio.currentTime = 0;
+            modalVideo.removeAttribute("src");
+            modalAudio.removeAttribute("src");
+            modalImage.removeAttribute("src");
         });
 }

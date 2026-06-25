@@ -29,6 +29,14 @@ services:
       $disks: !tagged_iterator
         tag: keyboardman_filemanager.disk
 
+  Keyboardman\FilemanagerBundle\Upload\:
+    resource: "../src/Upload/"
+
+  Keyboardman\FilemanagerBundle\Controller\FilemanagerController:
+    bind:
+      $chunkSize: "%keyboardman_filemanager.upload.chunk_size%"
+      $chunkThreshold: "%keyboardman_filemanager.upload.chunk_threshold%"
+
   Keyboardman\FilemanagerBundle\Twig\FilemanagerExtension:
     public: true
     tags: ["twig.extension"]

@@ -9,6 +9,9 @@ use Symfony\Component\Form\FormView;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * @extends AbstractType<string|null>
+ */
 class FilemanagerType extends AbstractType
 {
     public function __construct(private UrlGeneratorInterface $urlGenerator)
