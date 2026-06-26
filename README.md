@@ -8,8 +8,9 @@ Bundle Symfony pour intégrer un filemanager dans vos formulaires, basé sur [Fl
 
 - **PHP** 8.2 ou supérieur
 - **Symfony** 8.x
-- **league/flysystem** et **league/flysystem-bundle**
 - **symfony/asset-mapper** (pour exposer les assets du bundle)
+
+`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-aws-s3-v3` sont installés automatiquement avec le bundle. Il reste à enregistrer `League\FlysystemBundle\FlysystemBundle` dans `config/bundles.php`.
 
 ## Installation
 
@@ -34,11 +35,7 @@ Dans le `composer.json` du projet, ajoutez le dépôt puis installez :
 composer update keyboardman/filemanager-bundle
 ```
 
-Le filemanager a besoin de **Flysystem** pour le stockage. Si ce n’est pas déjà le cas, installez le bundle officiel :
-
-```bash
-composer require league/flysystem-bundle
-```
+`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-aws-s3-v3` sont installés en même temps ; aucune commande Composer supplémentaire n'est requise.
 
 ### 2. Enregistrer le bundle
 
@@ -51,6 +48,8 @@ return [
     League\FlysystemBundle\FlysystemBundle::class => ['all' => true],
 ];
 ```
+
+Enregistrez `KeyboardmanFilemanagerBundle` **avant** `FlysystemBundle` afin que les storages soient créés automatiquement à partir de votre configuration.
 
 ### 3. Enregistrer les routes
 
@@ -69,31 +68,42 @@ Le filemanager sera alors accessible sur la route nommée `keyboardman_filemanag
 
 ## Configuration
 
-### Configuration Flysystem
+Le filemanager se configure dans un seul fichier `config/packages/keyboardman_filemanager.yaml`. Chaque disk définit son stockage Flysystem inline ; **aucun fichier `flysystem.yaml` dédié n'est requis** pour le filemanager.
 
-Le filemanager s’appuie sur les storages définis par **Flysystem**. Configurez au moins un storage dans `config/packages/flysystem.yaml` :
+Paramètres communs à chaque disk :
 
-```yaml
-# config/packages/flysystem.yaml
-flysystem:
-    storages:
-        default.storage:
-            adapter: local
-            visibility: public
-            options:
-                directory: "%kernel.project_dir%/public/uploads/default"
+| Paramètre | Description |
+| --------- | ----------- |
+| `label` | Libellé affiché dans l'interface |
+| `storage` | Configuration Flysystem (voir exemples ci-dessous) |
+| `visibility` | `public` ou `private` (propriété filemanager du disk) |
+| `signed_urls` | Génération d'URL signées si nécessaire |
+| `default_uri` | (optionnel) Base d'URL publique pour les fichiers de ce disk |
 
-        public.storage:
-            adapter: local
-            options:
-                directory: "%kernel.project_dir%/var/storage/public"
-```
+Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`, `aws:`, etc.) ou le format legacy (`adapter` + `options`). Voir la [doc Flysystem Bundle](https://github.com/thephpleague/flysystem-bundle).
 
-Vous pouvez ajouter d’autres adapters (S3, FTP, etc.) selon la [doc Flysystem Bundle](https://github.com/thephpleague/flysystem-bundle).
+### Vue d'ensemble des adapters
 
-### Configuration du filemanager
+| Clé `storage` | Usage | Package Composer (si non inclus) |
+| ------------- | ----- | -------------------------------- |
+| `local` | Fichiers sur le serveur | inclus via `league/flysystem-bundle` |
+| `aws` | Amazon S3 (AWS SDK) | inclus (`league/flysystem-aws-s3-v3`) |
+| `asyncaws` | Amazon S3 (AsyncAws, plus léger) | `league/flysystem-async-aws-s3` |
+| `azure` | Azure Blob Storage | `league/flysystem-azure-blob-storage` |
+| `gcloud` | Google Cloud Storage | `league/flysystem-google-cloud-storage` |
+| `ftp` | Serveur FTP | `league/flysystem-ftp` |
+| `sftp` | Serveur SFTP | `league/flysystem-sftp-v3` |
+| `memory` | Stockage en mémoire (tests) | `league/flysystem-memory` |
+| `bunnycdn` | BunnyCDN Storage | `platformcommunity/flysystem-bunnycdn` |
+| `webdav` | Serveur WebDAV | `league/flysystem-webdav` |
+| `gridfs` | MongoDB GridFS | `league/flysystem-gridfs` |
+| `service` | Adapter personnalisé (service Symfony) | selon votre implémentation |
 
-Dans `config/packages/keyboardman_filemanager.yaml`, déclarez des **disks** qui pointent vers vos storages Flysystem :
+Les exemples ci-dessous utilisent le format Flysystem Bundle 3.x (`local:`, `aws:`, etc.). Chaque adapter optionnel doit être installé avant utilisation : `composer require <package>`.
+
+### Stockage local
+
+Fichiers servis depuis un répertoire du serveur (ex. `public/uploads`).
 
 ```yaml
 # config/packages/keyboardman_filemanager.yaml
@@ -101,23 +111,362 @@ keyboardman_filemanager:
   disks:
     default:
       label: Default
-      storage: default.storage          # identifiant du storage Flysystem
-      visibility: public
+      storage:
+        local:
+          directory: "%kernel.project_dir%/public/uploads/default"
+        visibility: public
       signed_urls: true
       default_uri: "%env(resolve:DEFAULT_URI)%/uploads/default"
-
-    public:
-      label: Public
-      storage: public.storage
-      visibility: public
-      signed_urls: true
 ```
 
-- **storage** : nom du service Flysystem (celui défini sous `flysystem.storages`).
-- **label** : libellé affiché dans l’interface.
-- **visibility** : `public` ou `private`.
-- **signed_urls** : génération d’URL signées si nécessaire.
-- **default_uri** : (optionnel) base d’URL pour les fichiers de ce disk (ex. domaine + chemin public).
+Format legacy équivalent :
+
+```yaml
+storage:
+  adapter: local
+  visibility: public
+  options:
+    directory: "%kernel.project_dir%/public/uploads/default"
+```
+
+Assurez-vous que le répertoire existe et est accessible en écriture par PHP. Si les fichiers doivent être servis directement par le serveur web, placez-les sous `public/`.
+
+### Stockage S3 (AWS)
+
+L'adapter `league/flysystem-aws-s3-v3` est installé automatiquement avec le bundle. Il suffit de déclarer un client S3 (ex. dans `config/services.yaml`) :
+
+```yaml
+services:
+  aws.s3.client:
+    class: Aws\S3\S3Client
+    arguments:
+      -
+        region: "%env(AWS_REGION)%"
+        version: "latest"
+        credentials:
+          key: "%env(AWS_ACCESS_KEY_ID)%"
+          secret: "%env(AWS_SECRET_ACCESS_KEY)%"
+```
+
+Puis configurez un disk S3 :
+
+```yaml
+# config/packages/keyboardman_filemanager.yaml
+keyboardman_filemanager:
+  disks:
+    s3:
+      label: Médias S3
+      storage:
+        aws:
+          client: aws.s3.client
+          bucket: "%env(AWS_S3_BUCKET)%"
+          prefix: uploads
+        visibility: public
+      default_uri: "https://%env(AWS_S3_BUCKET)%.s3.%env(AWS_REGION)%.amazonaws.com/uploads"
+```
+
+Format legacy équivalent :
+
+```yaml
+storage:
+  adapter: aws
+  visibility: public
+  options:
+    client: aws.s3.client
+    bucket: "%env(AWS_S3_BUCKET)%"
+    prefix: uploads
+```
+
+Variables d'environnement S3 à ajouter dans `.env` :
+
+```env
+AWS_REGION=eu-west-3
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_S3_BUCKET=my-bucket
+```
+
+Le `prefix` est optionnel : il préfixe toutes les clés d'objets dans le bucket (ex. `uploads/photo.jpg`).
+
+### Stockage S3 (AsyncAws)
+
+Alternative légère à l'AWS SDK pour S3. Installez `league/flysystem-async-aws-s3` puis déclarez un client AsyncAws :
+
+```yaml
+# config/services.yaml
+services:
+  asyncaws.s3.client:
+    class: AsyncAws\S3\S3Client
+    arguments:
+      -
+        region: "%env(AWS_REGION)%"
+        accessKeyId: "%env(AWS_ACCESS_KEY_ID)%"
+        accessKeySecret: "%env(AWS_SECRET_ACCESS_KEY)%"
+```
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    s3_async:
+      label: Médias S3 (AsyncAws)
+      storage:
+        asyncaws:
+          client: asyncaws.s3.client
+          bucket: "%env(AWS_S3_BUCKET)%"
+          prefix: uploads
+```
+
+### Stockage Azure Blob
+
+```bash
+composer require league/flysystem-azure-blob-storage
+```
+
+```yaml
+# config/services.yaml
+services:
+  azure.blob.client:
+    class: AzureOss\Storage\Blob\BlobServiceClient
+    # configurez selon votre compte Azure
+
+# config/packages/keyboardman_filemanager.yaml
+keyboardman_filemanager:
+  disks:
+    azure:
+      label: Azure
+      storage:
+        azure:
+          client: azure.blob.client
+          container: "%env(AZURE_STORAGE_CONTAINER)%"
+          prefix: media
+```
+
+### Stockage Google Cloud Storage
+
+```bash
+composer require league/flysystem-google-cloud-storage
+```
+
+```yaml
+# config/services.yaml
+services:
+  gcloud.storage.client:
+    class: Google\Cloud\Storage\StorageClient
+    arguments:
+      - keyFilePath: "%env(resolve:GOOGLE_APPLICATION_CREDENTIALS)%"
+
+# config/packages/keyboardman_filemanager.yaml
+keyboardman_filemanager:
+  disks:
+    gcloud:
+      label: GCS
+      storage:
+        gcloud:
+          client: gcloud.storage.client
+          bucket: "%env(GCS_BUCKET)%"
+          prefix: uploads
+```
+
+### Stockage FTP
+
+```bash
+composer require league/flysystem-ftp
+```
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    ftp:
+      label: FTP
+      storage:
+        ftp:
+          host: "%env(FTP_HOST)%"
+          username: "%env(FTP_USERNAME)%"
+          password: "%env(FTP_PASSWORD)%"
+          port: 21
+          root: /uploads
+          passive: true
+          ssl: false
+```
+
+### Stockage SFTP
+
+```bash
+composer require league/flysystem-sftp-v3
+```
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    sftp:
+      label: SFTP
+      storage:
+        sftp:
+          host: "%env(SFTP_HOST)%"
+          username: "%env(SFTP_USERNAME)%"
+          password: "%env(SFTP_PASSWORD)%"
+          # ou privateKey: "%kernel.project_dir%/config/ssh/id_rsa"
+          port: 22
+          root: /var/www/uploads
+```
+
+### Stockage mémoire (tests)
+
+Utile en environnement de test ; aucune persistance disque.
+
+```bash
+composer require league/flysystem-memory
+```
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    memory:
+      label: Test
+      storage:
+        memory: ~
+```
+
+### Stockage BunnyCDN
+
+```bash
+composer require platformcommunity/flysystem-bunnycdn
+```
+
+```yaml
+# config/services.yaml
+services:
+  bunnycdn.client:
+    class: PlatformCommunity\Flysystem\BunnyCDN\BunnyCDNClient
+    # voir la doc de l'adapter BunnyCDN
+
+# config/packages/keyboardman_filemanager.yaml
+keyboardman_filemanager:
+  disks:
+    bunnycdn:
+      label: BunnyCDN
+      storage:
+        bunnycdn:
+          client: bunnycdn.client
+          pull_zone: "%env(BUNNYCDN_PULL_ZONE)%"
+```
+
+### Stockage WebDAV
+
+```bash
+composer require league/flysystem-webdav
+```
+
+```yaml
+# config/services.yaml
+services:
+  webdav.client:
+    class: Sabre\DAV\Client
+    arguments:
+      - baseUri: "%env(WEBDAV_BASE_URI)%"
+        userName: "%env(WEBDAV_USERNAME)%"
+        password: "%env(WEBDAV_PASSWORD)%"
+
+# config/packages/keyboardman_filemanager.yaml
+keyboardman_filemanager:
+  disks:
+    webdav:
+      label: WebDAV
+      storage:
+        webdav:
+          client: webdav.client
+          prefix: uploads
+```
+
+### Stockage GridFS (MongoDB)
+
+```bash
+composer require league/flysystem-gridfs
+```
+
+Via URI MongoDB :
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    gridfs:
+      label: MongoDB GridFS
+      storage:
+        gridfs:
+          mongodb_uri: "%env(MONGODB_URI)%"
+          database: "%env(MONGODB_DATABASE)%"
+          prefix: media
+```
+
+Ou via un service bucket GridFS existant :
+
+```yaml
+storage:
+  gridfs:
+    bucket: app.gridfs.bucket
+    prefix: media
+```
+
+### Adapter personnalisé
+
+Pour un adapter Flysystem enregistré comme service Symfony :
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    custom:
+      label: Custom
+      storage:
+        service: app.flysystem.custom_adapter
+```
+
+### Exemple multi-disks (local + S3)
+
+```yaml
+keyboardman_filemanager:
+  disks:
+    default:
+      label: Local
+      storage:
+        local:
+          directory: "%kernel.project_dir%/public/uploads/default"
+      default_uri: "%env(resolve:DEFAULT_URI)%/uploads/default"
+
+    s3:
+      label: Production S3
+      storage:
+        aws:
+          client: aws.s3.client
+          bucket: "%env(AWS_S3_BUCKET)%"
+          prefix: media
+      default_uri: "https://%env(AWS_S3_BUCKET)%.s3.%env(AWS_REGION)%.amazonaws.com/media"
+```
+
+### Migration depuis l'ancien format
+
+Si vous référenciez auparavant un storage Flysystem externe :
+
+```yaml
+# Avant
+keyboardman_filemanager:
+  disks:
+    default:
+      storage: default.storage   # référence vers flysystem.yaml
+```
+
+Copiez la configuration du storage depuis `flysystem.yaml` dans le bloc `storage` du disk :
+
+```yaml
+# Après
+keyboardman_filemanager:
+  disks:
+    default:
+      storage:
+        local:
+          directory: "%kernel.project_dir%/public/uploads/default"
+```
+
+Les storages `flysystem.storages` ne sont plus nécessaires s'ils ne servaient qu'au filemanager.
 
 ---
 
@@ -131,6 +480,18 @@ keyboardman_filemanager:
 | `DEFAULT_URI`               | URL de base de l’application (ex. `https://example.com`). Utilisée pour construire les URIs des fichiers quand `default_uri` est configuré. |
 | `FILEMANAGER_TOKEN_ENABLED` | Si `true`, active la vérification par token pour l’accès au filemanager en iframe (cross-domain).                                           |
 | `FILEMANAGER_TOKENS`        | Chemin vers un fichier JSON listant les tokens par domaine (voir ci-dessous). Utilisé quand `FILEMANAGER_TOKEN_ENABLED` est activé.         |
+| `AWS_REGION`                | Région AWS (ex. `eu-west-3`). Requis pour un disk S3.                                                                                       |
+| `AWS_ACCESS_KEY_ID`         | Clé d'accès AWS. Requis pour un disk S3.                                                                                                    |
+| `AWS_SECRET_ACCESS_KEY`     | Secret AWS. Requis pour un disk S3.                                                                                                          |
+| `AWS_S3_BUCKET`             | Nom du bucket S3. Requis pour un disk S3.                                                                                                   |
+| `AZURE_STORAGE_CONTAINER`   | Conteneur Azure Blob. Requis pour un disk `azure`.                                                                                          |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Chemin vers le fichier de credentials GCP. Requis pour un disk `gcloud`.                                                             |
+| `GCS_BUCKET`                | Bucket Google Cloud Storage. Requis pour un disk `gcloud`.                                                                                  |
+| `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD` | Connexion FTP. Requis pour un disk `ftp`.                                                                                    |
+| `SFTP_HOST`, `SFTP_USERNAME`, `SFTP_PASSWORD` | Connexion SFTP. Requis pour un disk `sftp`.                                                                              |
+| `BUNNYCDN_PULL_ZONE`        | Zone pull BunnyCDN. Requis pour un disk `bunnycdn`.                                                                                         |
+| `WEBDAV_BASE_URI`, `WEBDAV_USERNAME`, `WEBDAV_PASSWORD` | Connexion WebDAV. Requis pour un disk `webdav`.                                                          |
+| `MONGODB_URI`, `MONGODB_DATABASE` | Connexion MongoDB GridFS. Requis pour un disk `gridfs` (mode URI).                                                                  |
 
 
 ### Fichier JSON des tokens (`FILEMANAGER_TOKENS`)
@@ -261,9 +622,8 @@ Cet exemple contient :
 ## Exemple complet
 
 1. **Configuration**
-  - `config/packages/flysystem.yaml` : storages `default.storage` et `public.storage`.  
-  - `config/packages/keyboardman_filemanager.yaml` : disks `default` et `public` pointant vers ces storages.  
-  - `.env` : `DEFAULT_URI`, optionnellement `FILEMANAGER_TOKEN_ENABLED` et `FILEMANAGER_TOKENS`.
+  - `config/packages/keyboardman_filemanager.yaml` : disk local (voir [Stockage local](#stockage-local)) ou S3 (voir [Stockage S3](#stockage-s3-aws)).
+  - `.env` : `DEFAULT_URI`, optionnellement `FILEMANAGER_TOKEN_ENABLED`, `FILEMANAGER_TOKENS`, et variables AWS si disk S3.
 2. **Formulaire**
   - Champ avec `FilemanagerType::class` et options si besoin (`crossdomain`, `media`, `token`).
 3. **Template**

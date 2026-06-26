@@ -17,4 +17,8 @@
     <extensions>
         <bootstrap class="Symfony\Bridge\PhpUnit\SymfonyExtension"/>
     </extensions>
+    <php>
+        <env name="FILEMANAGER_TOKEN_ENABLED" value="0"/>
+        <env name="FILEMANAGER_TOKENS" value="tests/Fixtures/filemanager_tokens.json"/>
+    </php>
 </phpunit>

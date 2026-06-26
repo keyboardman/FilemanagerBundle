@@ -32,6 +32,11 @@ class KeyboardmanFilemanagerExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
+        $storages = $this->buildFlysystemStorages($config['disks']);
+        if ([] !== $storages) {
+            $container->prependExtensionConfig('flysystem', ['storages' => $storages]);
+        }
+
         $container->setParameter('keyboardman_filemanager.upload.chunk_size', $config['upload']['chunk_size']);
         $container->setParameter('keyboardman_filemanager.upload.chunk_threshold', $config['upload']['chunk_threshold']);
 
@@ -42,8 +47,8 @@ class KeyboardmanFilemanagerExtension extends Extension
                 ->setLazy(true)
                 ->addArgument($name)
                 ->addArgument($diskConfig['label'])
-                ->addArgument(new Reference($diskConfig['storage']))
-                ->addArgument($diskConfig)
+                ->addArgument(new Reference(self::storageServiceId($name)))
+                ->addArgument($this->diskOptions($diskConfig))
                 ->addTag('keyboardman_filemanager.disk')
             ;
         }
@@ -61,5 +66,44 @@ class KeyboardmanFilemanagerExtension extends Extension
         );
 
         $loader->load('services.yaml');
+    }
+
+    public static function storageServiceId(string $diskName): string
+    {
+        return sprintf('keyboardman_filemanager.%s.storage', $diskName);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $disks
+     *
+     * @return array<string, mixed>
+     */
+    private function buildFlysystemStorages(array $disks): array
+    {
+        $storages = [];
+
+        foreach ($disks as $name => $diskConfig) {
+            if (!isset($diskConfig['storage']) || !is_array($diskConfig['storage'])) {
+                continue;
+            }
+
+            $storages[self::storageServiceId($name)] = $diskConfig['storage'];
+        }
+
+        return $storages;
+    }
+
+    /**
+     * @param array<string, mixed> $diskConfig
+     *
+     * @return array<string, mixed>
+     */
+    private function diskOptions(array $diskConfig): array
+    {
+        return [
+            'visibility' => $diskConfig['visibility'] ?? 'public',
+            'signed_urls' => $diskConfig['signed_urls'] ?? false,
+            'default_uri' => $diskConfig['default_uri'] ?? null,
+        ];
     }
 }

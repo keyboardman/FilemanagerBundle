@@ -16,15 +16,16 @@ class Configuration implements ConfigurationInterface
             ->children()
 
                 ->arrayNode('disks')
-                    ->info('Logical disks that map to Flysystem storages')
+                    ->info('Logical disks with inline Flysystem storage configuration')
+                    ->defaultValue([])
                     ->useAttributeAsKey('name')
                     ->arrayPrototype()
                         ->children()
 
-                            ->scalarNode('storage')
+                            ->variableNode('storage')
                                 ->isRequired()
                                 ->cannotBeEmpty()
-                                ->info('Service id of Flysystem storage (e.g. local.storage)')
+                                ->info('Inline Flysystem storage config (adapter/options or shorthand like local:)')
                             ->end()
 
                             ->scalarNode('label')
