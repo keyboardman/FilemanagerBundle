@@ -76,7 +76,7 @@ export default class extends Controller {
     enqueueFiles(files) {
         for (const file of files) {
             if (!this.isAllowedMedia(file)) {
-                this.showError(file.name, "Type de fichier non autorisé (images et vidéos uniquement).");
+                this.showError(file.name, "Type de fichier non autorisé (images, vidéos et audios uniquement).");
                 continue;
             }
 

@@ -82,11 +82,11 @@ class MockXMLHttpRequest {
 }
 
 describe("upload helpers", () => {
-    it("accepts image and video mime types", () => {
+    it("accepts image, video and audio mime types", () => {
         expect(isAllowedMediaType("image/png")).toBe(true);
         expect(isAllowedMediaType("video/mp4")).toBe(true);
+        expect(isAllowedMediaType("audio/mpeg")).toBe(true);
         expect(isAllowedMediaType("application/pdf")).toBe(false);
-        expect(isAllowedMediaType("audio/mpeg")).toBe(false);
     });
 
     it("parses successful JSON responses", () => {

@@ -62,8 +62,6 @@ keyboardman_filemanager_bundle_routes:
 
 Le filemanager sera alors accessible sur la route nommée `keyboardman_filemanager` (ex. `/kbd/filemanager`).
 
-
-
 ---
 
 ## Configuration
@@ -72,32 +70,36 @@ Le filemanager se configure dans un seul fichier `config/packages/keyboardman_fi
 
 Paramètres communs à chaque disk :
 
-| Paramètre | Description |
-| --------- | ----------- |
-| `label` | Libellé affiché dans l'interface |
-| `storage` | Configuration Flysystem (voir exemples ci-dessous) |
-| `visibility` | `public` ou `private` (propriété filemanager du disk) |
-| `signed_urls` | Génération d'URL signées si nécessaire |
+
+| Paramètre     | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| `label`       | Libellé affiché dans l'interface                             |
+| `storage`     | Configuration Flysystem (voir exemples ci-dessous)           |
+| `visibility`  | `public` ou `private` (propriété filemanager du disk)        |
+| `signed_urls` | Génération d'URL signées si nécessaire                       |
 | `default_uri` | (optionnel) Base d'URL publique pour les fichiers de ce disk |
+
 
 Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`, `aws:`, etc.) ou le format legacy (`adapter` + `options`). Voir la [doc Flysystem Bundle](https://github.com/thephpleague/flysystem-bundle).
 
 ### Vue d'ensemble des adapters
 
-| Clé `storage` | Usage | Package Composer (si non inclus) |
-| ------------- | ----- | -------------------------------- |
-| `local` | Fichiers sur le serveur | inclus via `league/flysystem-bundle` |
-| `aws` | Amazon S3 (AWS SDK) | inclus (`league/flysystem-aws-s3-v3`) |
-| `asyncaws` | Amazon S3 (AsyncAws, plus léger) | `league/flysystem-async-aws-s3` |
-| `azure` | Azure Blob Storage | `league/flysystem-azure-blob-storage` |
-| `gcloud` | Google Cloud Storage | `league/flysystem-google-cloud-storage` |
-| `ftp` | Serveur FTP | `league/flysystem-ftp` |
-| `sftp` | Serveur SFTP | `league/flysystem-sftp-v3` |
-| `memory` | Stockage en mémoire (tests) | `league/flysystem-memory` |
-| `bunnycdn` | BunnyCDN Storage | `platformcommunity/flysystem-bunnycdn` |
-| `webdav` | Serveur WebDAV | `league/flysystem-webdav` |
-| `gridfs` | MongoDB GridFS | `league/flysystem-gridfs` |
-| `service` | Adapter personnalisé (service Symfony) | selon votre implémentation |
+
+| Clé `storage` | Usage                                  | Package Composer (si non inclus)        |
+| ------------- | -------------------------------------- | --------------------------------------- |
+| `local`       | Fichiers sur le serveur                | inclus via `league/flysystem-bundle`    |
+| `aws`         | Amazon S3 (AWS SDK)                    | inclus (`league/flysystem-aws-s3-v3`)   |
+| `asyncaws`    | Amazon S3 (AsyncAws, plus léger)       | `league/flysystem-async-aws-s3`         |
+| `azure`       | Azure Blob Storage                     | `league/flysystem-azure-blob-storage`   |
+| `gcloud`      | Google Cloud Storage                   | `league/flysystem-google-cloud-storage` |
+| `ftp`         | Serveur FTP                            | `league/flysystem-ftp`                  |
+| `sftp`        | Serveur SFTP                           | `league/flysystem-sftp-v3`              |
+| `memory`      | Stockage en mémoire (tests)            | `league/flysystem-memory`               |
+| `bunnycdn`    | BunnyCDN Storage                       | `platformcommunity/flysystem-bunnycdn`  |
+| `webdav`      | Serveur WebDAV                         | `league/flysystem-webdav`               |
+| `gridfs`      | MongoDB GridFS                         | `league/flysystem-gridfs`               |
+| `service`     | Adapter personnalisé (service Symfony) | selon votre implémentation              |
+
 
 Les exemples ci-dessous utilisent le format Flysystem Bundle 3.x (`local:`, `aws:`, etc.). Chaque adapter optionnel doit être installé avant utilisation : `composer require <package>`.
 
@@ -470,28 +472,102 @@ Les storages `flysystem.storages` ne sont plus nécessaires s'ils ne servaient q
 
 ---
 
+## Types de médias (image, vidéo, audio)
+
+Le filemanager gère trois familles de fichiers : **image**, **vidéo** et **audio**. Ce réglage ne se fait **pas** dans `keyboardman_filemanager.yaml` (qui ne couvre que le stockage Flysystem), mais via le paramètre d'URL `media` ou l'option `media` du `FilemanagerType`.
+
+### Comportement par défaut
+
+Sans filtre `media`, le filemanager :
+
+- **affiche** uniquement les fichiers image, vidéo et audio (les autres types sont masqués dans la liste) ;
+- **accepte à l'upload** les fichiers dont le type MIME commence par `image/`, `video/` ou `audio/` (dropzone `accept="image/*,video/*,audio/*"`).
+
+Les trois types sont donc autorisés par défaut. Aucune configuration supplémentaire n'est requise pour les activer.
+
+### Restreindre à un seul type
+
+Pour limiter la sélection à **un** type, utilisez la valeur `image`, `video` ou `audio` :
+
+
+| Valeur `media` | Effet                        |
+| -------------- | ---------------------------- |
+| *(absent)*     | Images, vidéos **et** audios |
+| `image`        | Images uniquement            |
+| `video`        | Vidéos uniquement            |
+| `audio`        | Audios uniquement            |
+
+
+> **Note** : il n'est pas possible aujourd'hui de combiner deux types seulement (ex. image + vidéo sans audio) via la configuration. Utilisez l'absence de filtre (les trois types) ou un filtre unique.
+
+### Dans un formulaire (`FilemanagerType`)
+
+Passez l'option `media` pour pré-filtrer l'iframe du filemanager :
+
+```php
+// Images seulement
+$builder->add('cover', FilemanagerType::class, [
+    'media' => 'image',
+]);
+
+// Vidéos seulement
+$builder->add('clip', FilemanagerType::class, [
+    'media' => 'video',
+]);
+
+// Audios seulement
+$builder->add('podcast', FilemanagerType::class, [
+    'media' => 'audio',
+]);
+
+// Images, vidéos et audios (défaut)
+$builder->add('fichier', FilemanagerType::class, [
+    'media' => null,
+]);
+```
+
+L'option ajoute `?media=…` à l'URL du filemanager. En mode iframe, le sélecteur de filtre média est verrouillé sur ce type.
+
+### En accès direct (URL)
+
+Ouvrez le filemanager avec le paramètre de requête `media` :
+
+```
+/kbd/filemanager?filesystem=default&path=/&media=image
+/kbd/filemanager?filesystem=default&path=/&media=video
+/kbd/filemanager?filesystem=default&path=/&media=audio
+```
+
+Sans `media`, les trois types sont disponibles. L'utilisateur peut aussi changer le filtre via le menu déroulant **Images / Audio / Vidéo** dans l'en-tête du filemanager (sauf en mode iframe avec un filtre imposé).
+
+### Côté upload
+
+L'upload refuse tout fichier dont le MIME n'est pas `image/`*, `video/*` ou `audio/*`, indépendamment du filtre d'affichage. Un message d'erreur est affiché : *« Type de fichier non autorisé (images, vidéos et audios uniquement). »*
+
+---
+
 ## Variables d’environnement
 
 À définir dans votre `.env` (ou `.env.local`) :
 
 
-| Variable                    | Description                                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEFAULT_URI`               | URL de base de l’application (ex. `https://example.com`). Utilisée pour construire les URIs des fichiers quand `default_uri` est configuré. |
-| `FILEMANAGER_TOKEN_ENABLED` | Si `true`, active la vérification par token pour l’accès au filemanager en iframe (cross-domain).                                           |
-| `FILEMANAGER_TOKENS`        | Chemin vers un fichier JSON listant les tokens par domaine (voir ci-dessous). Utilisé quand `FILEMANAGER_TOKEN_ENABLED` est activé.         |
-| `AWS_REGION`                | Région AWS (ex. `eu-west-3`). Requis pour un disk S3.                                                                                       |
-| `AWS_ACCESS_KEY_ID`         | Clé d'accès AWS. Requis pour un disk S3.                                                                                                    |
-| `AWS_SECRET_ACCESS_KEY`     | Secret AWS. Requis pour un disk S3.                                                                                                          |
-| `AWS_S3_BUCKET`             | Nom du bucket S3. Requis pour un disk S3.                                                                                                   |
-| `AZURE_STORAGE_CONTAINER`   | Conteneur Azure Blob. Requis pour un disk `azure`.                                                                                          |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Chemin vers le fichier de credentials GCP. Requis pour un disk `gcloud`.                                                             |
-| `GCS_BUCKET`                | Bucket Google Cloud Storage. Requis pour un disk `gcloud`.                                                                                  |
-| `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD` | Connexion FTP. Requis pour un disk `ftp`.                                                                                    |
-| `SFTP_HOST`, `SFTP_USERNAME`, `SFTP_PASSWORD` | Connexion SFTP. Requis pour un disk `sftp`.                                                                              |
-| `BUNNYCDN_PULL_ZONE`        | Zone pull BunnyCDN. Requis pour un disk `bunnycdn`.                                                                                         |
-| `WEBDAV_BASE_URI`, `WEBDAV_USERNAME`, `WEBDAV_PASSWORD` | Connexion WebDAV. Requis pour un disk `webdav`.                                                          |
-| `MONGODB_URI`, `MONGODB_DATABASE` | Connexion MongoDB GridFS. Requis pour un disk `gridfs` (mode URI).                                                                  |
+| Variable                                                | Description                                                                                                                                 |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFAULT_URI`                                           | URL de base de l’application (ex. `https://example.com`). Utilisée pour construire les URIs des fichiers quand `default_uri` est configuré. |
+| `FILEMANAGER_TOKEN_ENABLED`                             | Si `true`, active la vérification par token pour l’accès au filemanager en iframe (cross-domain).                                           |
+| `FILEMANAGER_TOKENS`                                    | Chemin vers un fichier JSON listant les tokens par domaine (voir ci-dessous). Utilisé quand `FILEMANAGER_TOKEN_ENABLED` est activé.         |
+| `AWS_REGION`                                            | Région AWS (ex. `eu-west-3`). Requis pour un disk S3.                                                                                       |
+| `AWS_ACCESS_KEY_ID`                                     | Clé d'accès AWS. Requis pour un disk S3.                                                                                                    |
+| `AWS_SECRET_ACCESS_KEY`                                 | Secret AWS. Requis pour un disk S3.                                                                                                         |
+| `AWS_S3_BUCKET`                                         | Nom du bucket S3. Requis pour un disk S3.                                                                                                   |
+| `AZURE_STORAGE_CONTAINER`                               | Conteneur Azure Blob. Requis pour un disk `azure`.                                                                                          |
+| `GOOGLE_APPLICATION_CREDENTIALS`                        | Chemin vers le fichier de credentials GCP. Requis pour un disk `gcloud`.                                                                    |
+| `GCS_BUCKET`                                            | Bucket Google Cloud Storage. Requis pour un disk `gcloud`.                                                                                  |
+| `FTP_HOST`, `FTP_USERNAME`, `FTP_PASSWORD`              | Connexion FTP. Requis pour un disk `ftp`.                                                                                                   |
+| `SFTP_HOST`, `SFTP_USERNAME`, `SFTP_PASSWORD`           | Connexion SFTP. Requis pour un disk `sftp`.                                                                                                 |
+| `BUNNYCDN_PULL_ZONE`                                    | Zone pull BunnyCDN. Requis pour un disk `bunnycdn`.                                                                                         |
+| `WEBDAV_BASE_URI`, `WEBDAV_USERNAME`, `WEBDAV_PASSWORD` | Connexion WebDAV. Requis pour un disk `webdav`.                                                                                             |
+| `MONGODB_URI`, `MONGODB_DATABASE`                       | Connexion MongoDB GridFS. Requis pour un disk `gridfs` (mode URI).                                                                          |
 
 
 ### Fichier JSON des tokens (`FILEMANAGER_TOKENS`)
@@ -564,11 +640,11 @@ class MyContentType extends AbstractType
 Options du `FilemanagerType` :
 
 
-| Option        | Type          | Description                                                                                    |
-| ------------- | ------------- | ---------------------------------------------------------------------------------------------- |
-| `crossdomain` | `bool`        | À `true` si l’iframe est chargée en cross-domain (nécessite la gestion des tokens si activée). |
-| `media`       | `string|null` | Filtre de type de médias (ex. `image`, `video`).                                               |
-| `token`       | `string|null` | Token passé en query pour l’accès au filemanager en iframe.                                    |
+| Option        | Type    | Description                                                                                    |
+| ------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| `crossdomain` | `bool`  | À `true` si l’iframe est chargée en cross-domain (nécessite la gestion des tokens si activée). |
+| `media`       | `string | null`                                                                                          |
+| `token`       | `string | null`                                                                                          |
 
 
 Le champ rend un input texte (valeur = chemin ou URI du fichier) et un bouton « Parcourir » qui ouvre le filemanager dans un modal.
@@ -630,8 +706,6 @@ Cet exemple contient :
   - Afficher le formulaire avec `{{ form(form) }}`.  
   - Inclure `{% include '@KeyboardmanFilemanager/iframe/modal.html.twig' %}`.
 
-
-
 Après avoir sélectionné un fichier dans le filemanager, la valeur du champ (chemin ou URI) est enregistrée dans l’input du formulaire et envoyée à la soumission.
 
 ---
@@ -648,6 +722,7 @@ composer test
 ```
 
 Couverture :
+
 - `UploadLimitResolver` et `ChunkUploadManager` (unitaires)
 - `POST /api/filemanager/upload` et `/upload-chunk` (fonctionnels via kernel de test)
 
@@ -659,5 +734,7 @@ npm test
 ```
 
 Couverture :
+
 - Helpers d’upload (`frontend/js/upload/helpers.js`)
 - Contrôleur Stimulus `filemanager-upload` (file d’attente, bascule monolithique/fragmenté, progression, erreurs, `beforeunload`)
+

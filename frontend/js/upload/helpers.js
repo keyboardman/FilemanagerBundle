@@ -1,5 +1,9 @@
 export function isAllowedMediaType(mimeType) {
-    return mimeType.startsWith("image/") || mimeType.startsWith("video/");
+    return (
+        mimeType.startsWith("image/") ||
+        mimeType.startsWith("video/") ||
+        mimeType.startsWith("audio/")
+    );
 }
 
 export function parseUploadResponse(xhr) {
