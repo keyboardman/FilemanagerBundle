@@ -697,6 +697,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         visibility?: scalar|Param|null, // Default: "public"
  *         signed_urls?: bool|Param, // Default: false
  *         signed_url_ttl?: int|Param, // Durée de validité des URLs présignées S3 en secondes (défaut 3600) // Default: 3600
+ *         proxy_media?: bool|Param, // Forcer le passage par le proxy Symfony (/kbd/filemanager/media) au lieu des URLs S3 directes ou signées // Default: false
  *         default_uri?: scalar|Param|null, // Default: null
  *     }>,
  *     iframe?: array{

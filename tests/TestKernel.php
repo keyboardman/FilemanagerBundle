@@ -40,7 +40,6 @@ class TestKernel extends BaseKernel
                             'directory' => '%kernel.cache_dir%/test_uploads',
                         ],
                     ],
-                    'default_uri' => 'https://example.test/uploads',
                 ],
             ],
         ]);

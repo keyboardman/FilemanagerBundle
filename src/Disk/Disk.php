@@ -46,4 +46,9 @@ class Disk
     {
         return (int) ($this->config['signed_url_ttl'] ?? 3600);
     }
+
+    public function usesProxyMedia(): bool
+    {
+        return (bool) ($this->config['proxy_media'] ?? false);
+    }
 }

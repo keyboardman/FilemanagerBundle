@@ -38,6 +38,51 @@ class DiskManagerPublicUrlTest extends TestCase
         $this->assertStringContainsString('X-Amz-Signature=', $url);
     }
 
+    public function testAsyncAwsDiskUsesSignedUrlByDefaultWithoutProxy(): void
+    {
+        $client = new S3Client([
+            'accessKeyId' => 'test',
+            'accessKeySecret' => 'test',
+            'region' => 'eu-west-1',
+        ], null, new MockHttpClient());
+
+        $filesystem = new Filesystem(new AsyncAwsS3Adapter($client, 'media-bucket', 'uploads'));
+        $disk = new Disk('s3', 'S3', $filesystem, []);
+
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->never())->method('generate');
+
+        $manager = new DiskManager([$disk], $urlGenerator);
+
+        $url = $manager->publicUrl('s3', 'clip.mp4');
+
+        $this->assertStringContainsString('X-Amz-Signature=', $url);
+        $this->assertNotNull($manager->resolveDirectMediaUrl('s3', 'clip.mp4'));
+    }
+
+    public function testProxyMediaForcesSymfonyRoute(): void
+    {
+        $client = new S3Client([
+            'accessKeyId' => 'test',
+            'accessKeySecret' => 'test',
+            'region' => 'eu-west-1',
+        ], null, new MockHttpClient());
+
+        $filesystem = new Filesystem(new AsyncAwsS3Adapter($client, 'media-bucket', 'uploads'));
+        $disk = new Disk('s3', 'S3', $filesystem, ['proxy_media' => true]);
+
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator
+            ->expects($this->once())
+            ->method('generate')
+            ->willReturn('/kbd/filemanager/media/s3/clip.mp4');
+
+        $manager = new DiskManager([$disk], $urlGenerator);
+
+        $this->assertNull($manager->resolveDirectMediaUrl('s3', 'clip.mp4'));
+        $this->assertSame('/kbd/filemanager/media/s3/clip.mp4', $manager->publicUrl('s3', 'clip.mp4'));
+    }
+
     public function testResolveUrlTwigFilterMatchesDiskManager(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);

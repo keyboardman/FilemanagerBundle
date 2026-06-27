@@ -78,7 +78,8 @@ Paramètres communs à chaque disk :
 | `visibility`  | `public` ou `private` (propriété filemanager du disk)        |
 | `signed_urls` | Génération d'URL signées S3 (via `temporaryUrl` Flysystem)   |
 | `signed_url_ttl` | Durée de validité des URLs présignées en secondes (défaut 3600) |
-| `default_uri` | (optionnel) Base d'URL publique pour les fichiers de ce disk |
+| `proxy_media` | Forcer le proxy Symfony au lieu des URLs S3 directes/signées (défaut `false`) |
+| `default_uri` | (optionnel) Base d'URL publique S3 pour les fichiers de ce disk |
 
 
 Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`, `asyncaws:`, etc.) ou le format legacy (`adapter` + `options`). Voir la [doc Flysystem Bundle](https://github.com/thephpleague/flysystem-bundle).
@@ -239,10 +240,18 @@ Exemple bucket public avec URL directe (nécessite CORS) :
 | Symptôme | Cause probable | Solution |
 | -------- | -------------- | -------- |
 | Erreur 500 à la lecture/seek | Credentials S3 invalides ou objet introuvable | Vérifier les variables AWS et les logs Symfony |
-| Seek vidéo revient au début | Réponse `Range` incorrecte ou CORS manquant | Utiliser le proxy (sans `default_uri`) ou configurer CORS |
+| Seek vidéo revient au début | Réponse `Range` incorrecte ou CORS manquant | Utiliser le proxy (`proxy_media: true`) ou configurer CORS sur le bucket |
+| Timeouts / lenteur | Chaque média repasse par PHP (proxy) | Laisser `proxy_media: false` (défaut) pour utiliser les URLs signées S3 |
+| Boucle de redirection | `default_uri` pointe vers `/kbd/filemanager/media/` | `default_uri` doit être l'URL S3 directe, pas le proxy Symfony |
 | 403 sur URL directe | Bucket privé sans URL signée | Activer `signed_urls: true` ou passer par le proxy |
 
-Le proxy Symfony (`/kbd/filemanager/media/...`) gère nativement les requêtes `Range` pour S3 via AsyncAws `GetObject` — aucune configuration supplémentaire n'est requise si vous n'utilisez pas `default_uri`.
+Le proxy Symfony (`/kbd/filemanager/media/...`) gère nativement les requêtes `Range` pour S3 via AsyncAws `GetObject` — **mais par défaut les disks AsyncAws utilisent des URLs signées** : le navigateur accède directement à S3 sans télécharger chaque fichier via PHP (évite les timeouts).
+
+Pour forcer le proxy (contrôle d'accès Symfony), activez `proxy_media: true` sur le disk :
+
+```yaml
+      proxy_media: true
+```
 
 > **Alternative AWS SDK** : si vous préférez l'AWS SDK officiel, installez `league/flysystem-aws-s3-v3` et utilisez la clé `aws:` à la place de `asyncaws:` dans la configuration storage. Le streaming par plages via le proxy n'est pas supporté avec cet adapter ; privilégiez AsyncAws pour S3.
 

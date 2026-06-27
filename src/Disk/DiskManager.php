@@ -2,6 +2,7 @@
 
 namespace Keyboardman\FilemanagerBundle\Disk;
 
+use Keyboardman\FilemanagerBundle\Media\Streaming\FlysystemAdapterExtractor;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\Filesystem;
@@ -78,7 +79,7 @@ class DiskManager
         $items = [];
 
         try {
-            foreach ($fs->listContents($path, false) as $item) {
+            foreach ($this->iterateListing($fs, $path, false) as $item) {
                 $itemPath = $item->path();
 
                 // ✅ Ignorer fichiers et dossiers cachés
@@ -142,6 +143,24 @@ class DiskManager
         });
 
         return $items;
+    }
+
+    /**
+     * @return iterable<\League\Flysystem\StorageAttributes>
+     */
+    private function iterateListing(\League\Flysystem\FilesystemOperator $filesystem, string $path, bool $deep): iterable
+    {
+        $seenPaths = [];
+
+        foreach ($filesystem->listContents($path, $deep) as $item) {
+            $itemPath = $item->path();
+            if (isset($seenPaths[$itemPath])) {
+                break;
+            }
+
+            $seenPaths[$itemPath] = true;
+            yield $item;
+        }
     }
 
     public function upload(
@@ -283,7 +302,7 @@ class DiskManager
                 throw new \RuntimeException('Le dossier cible est introuvable.');
             }
 
-            foreach ($fs->listContents($normalizedPath, false) as $_item) {
+            foreach ($this->iterateListing($fs, $normalizedPath, false) as $_item) {
                 throw new \RuntimeException('Le dossier doit être vide pour être supprimé.');
             }
 
@@ -295,10 +314,28 @@ class DiskManager
 
     public function publicUrl(string $filesystem, string $path, bool $absolute = false): string
     {
+        $directUrl = $this->resolveDirectMediaUrl($filesystem, $path);
+        if (null !== $directUrl) {
+            return $directUrl;
+        }
+
+        return $this->mediaProxyUrl($filesystem, $path, $absolute);
+    }
+
+    /**
+     * URL S3 directe ou signée, sans repasser par le proxy Symfony.
+     * Retourne null si le disk est configuré pour proxifier les médias.
+     */
+    public function resolveDirectMediaUrl(string $filesystem, string $path): ?string
+    {
         $disk = $this->disk($filesystem);
         $path = ltrim($path, '/');
 
-        if ($disk->usesSignedUrls()) {
+        if ($disk->usesProxyMedia()) {
+            return null;
+        }
+
+        if ($disk->usesSignedUrls() || FlysystemAdapterExtractor::supportsTemporaryUrls($disk->filesystem())) {
             $signedUrl = $this->generateSignedUrl($disk, $path);
             if (null !== $signedUrl) {
                 return $signedUrl;
@@ -306,13 +343,26 @@ class DiskManager
         }
 
         if ($base = $disk->getDefaultUri()) {
-            return rtrim($base, '/').'/'.$path;
+            $url = rtrim($base, '/').'/'.$path;
+            if (!$this->isMediaProxyUrl($url)) {
+                return $url;
+            }
         }
 
+        return null;
+    }
+
+    private function mediaProxyUrl(string $filesystem, string $path, bool $absolute): string
+    {
         return $this->urlGenerator->generate('keyboardman_filemanager_media', [
             'filesystem' => $filesystem,
-            'path' => $path,
+            'path' => ltrim($path, '/'),
         ], $absolute ? UrlGeneratorInterface::ABSOLUTE_URL : UrlGeneratorInterface::ABSOLUTE_PATH);
+    }
+
+    private function isMediaProxyUrl(string $url): bool
+    {
+        return str_contains($url, '/kbd/filemanager/media/');
     }
 
     private function generateSignedUrl(Disk $disk, string $path): ?string
@@ -337,6 +387,11 @@ class DiskManager
             return $detectedMimeType;
         }
 
+        $fromExtension = $this->mimeTypeFromExtension($path);
+        if (null !== $fromExtension) {
+            return $fromExtension;
+        }
+
         try {
             $mimeType = $this->disk($filesystem)->filesystem()->mimeType(ltrim($path, '/'));
             if ('' !== $mimeType) {
@@ -345,7 +400,7 @@ class DiskManager
         } catch (FilesystemException) {
         }
 
-        return $this->mimeTypeFromExtension($path) ?? 'application/octet-stream';
+        return 'application/octet-stream';
     }
 
     private function mimeTypeFromExtension(string $path): ?string

@@ -50,6 +50,11 @@ class Configuration implements ConfigurationInterface
                                 ->info('Durée de validité des URLs présignées S3 en secondes (défaut 3600)')
                             ->end()
 
+                            ->booleanNode('proxy_media')
+                                ->defaultFalse()
+                                ->info('Forcer le passage par le proxy Symfony (/kbd/filemanager/media) au lieu des URLs S3 directes ou signées')
+                            ->end()
+
                             ->scalarNode('default_uri')
                                 ->defaultNull()
                             ->end()

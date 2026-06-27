@@ -8,6 +8,7 @@ use Keyboardman\FilemanagerBundle\Media\Streaming\MediaStreamException;
 use League\Flysystem\FilesystemException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -38,6 +39,11 @@ class MediaController extends AbstractController
 
         if ('' === $normalizedPath || str_contains($normalizedPath, '..')) {
             throw $this->createNotFoundException();
+        }
+
+        $directUrl = $this->diskManager->resolveDirectMediaUrl($filesystem, $normalizedPath);
+        if (null !== $directUrl) {
+            return new RedirectResponse($directUrl, Response::HTTP_TEMPORARY_REDIRECT);
         }
 
         $fs = $this->diskManager->disk($filesystem)->filesystem();
