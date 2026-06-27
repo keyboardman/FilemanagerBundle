@@ -4,7 +4,9 @@ namespace Keyboardman\FilemanagerBundle\Disk;
 
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
+use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemException;
+use League\Flysystem\UnableToGenerateTemporaryUrl;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class DiskManager
@@ -291,10 +293,17 @@ class DiskManager
         }
     }
 
-    public function publicUrl(string $filesystem, string $path): string
+    public function publicUrl(string $filesystem, string $path, bool $absolute = false): string
     {
         $disk = $this->disk($filesystem);
         $path = ltrim($path, '/');
+
+        if ($disk->usesSignedUrls()) {
+            $signedUrl = $this->generateSignedUrl($disk, $path);
+            if (null !== $signedUrl) {
+                return $signedUrl;
+            }
+        }
 
         if ($base = $disk->getDefaultUri()) {
             return rtrim($base, '/').'/'.$path;
@@ -303,7 +312,23 @@ class DiskManager
         return $this->urlGenerator->generate('keyboardman_filemanager_media', [
             'filesystem' => $filesystem,
             'path' => $path,
-        ]);
+        ], $absolute ? UrlGeneratorInterface::ABSOLUTE_URL : UrlGeneratorInterface::ABSOLUTE_PATH);
+    }
+
+    private function generateSignedUrl(Disk $disk, string $path): ?string
+    {
+        $filesystem = $disk->filesystem();
+        if (!$filesystem instanceof Filesystem) {
+            return null;
+        }
+
+        try {
+            $expiresAt = (new \DateTimeImmutable())->modify(sprintf('+%d seconds', $disk->getSignedUrlTtl()));
+
+            return $filesystem->temporaryUrl($path, $expiresAt);
+        } catch (UnableToGenerateTemporaryUrl) {
+            return null;
+        }
     }
 
     public function resolveMimeType(string $filesystem, string $path, ?string $detectedMimeType = null): string

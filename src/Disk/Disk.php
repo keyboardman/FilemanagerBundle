@@ -36,4 +36,14 @@ class Disk
     {
         return $this->config['default_uri'] ?? null;
     }
+
+    public function usesSignedUrls(): bool
+    {
+        return (bool) ($this->config['signed_urls'] ?? false);
+    }
+
+    public function getSignedUrlTtl(): int
+    {
+        return (int) ($this->config['signed_url_ttl'] ?? 3600);
+    }
 }

@@ -32,6 +32,16 @@ services:
   Keyboardman\FilemanagerBundle\Upload\:
     resource: "../src/Upload/"
 
+  Keyboardman\FilemanagerBundle\Media\Streaming\:
+    resource: "../src/Media/Streaming/"
+
+  Keyboardman\FilemanagerBundle\Media\Streaming\MediaRangeReaderResolver:
+    arguments:
+      $readers:
+        - '@Keyboardman\FilemanagerBundle\Media\Streaming\AsyncAwsS3MediaRangeReader'
+        - '@Keyboardman\FilemanagerBundle\Media\Streaming\LocalMediaRangeReader'
+        - '@Keyboardman\FilemanagerBundle\Media\Streaming\FallbackMediaRangeReader'
+
   Keyboardman\FilemanagerBundle\Controller\FilemanagerController:
     bind:
       $chunkSize: "%keyboardman_filemanager.upload.chunk_size%"

@@ -10,7 +10,7 @@ Bundle Symfony pour intégrer un filemanager dans vos formulaires, basé sur [Fl
 - **Symfony** 8.x
 - **symfony/asset-mapper** (pour exposer les assets du bundle)
 
-`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-aws-s3-v3` sont installés automatiquement avec le bundle. Il reste à enregistrer `League\FlysystemBundle\FlysystemBundle` dans `config/bundles.php`.
+`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-async-aws-s3` sont installés automatiquement avec le bundle. Il reste à enregistrer `League\FlysystemBundle\FlysystemBundle` dans `config/bundles.php`.
 
 ## Installation
 
@@ -35,7 +35,7 @@ Dans le `composer.json` du projet, ajoutez le dépôt puis installez :
 composer update keyboardman/filemanager-bundle
 ```
 
-`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-aws-s3-v3` sont installés en même temps ; aucune commande Composer supplémentaire n'est requise.
+`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-async-aws-s3` sont installés en même temps ; aucune commande Composer supplémentaire n'est requise.
 
 ### 2. Enregistrer le bundle
 
@@ -76,11 +76,12 @@ Paramètres communs à chaque disk :
 | `label`       | Libellé affiché dans l'interface                             |
 | `storage`     | Configuration Flysystem (voir exemples ci-dessous)           |
 | `visibility`  | `public` ou `private` (propriété filemanager du disk)        |
-| `signed_urls` | Génération d'URL signées si nécessaire                       |
+| `signed_urls` | Génération d'URL signées S3 (via `temporaryUrl` Flysystem)   |
+| `signed_url_ttl` | Durée de validité des URLs présignées en secondes (défaut 3600) |
 | `default_uri` | (optionnel) Base d'URL publique pour les fichiers de ce disk |
 
 
-Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`, `aws:`, etc.) ou le format legacy (`adapter` + `options`). Voir la [doc Flysystem Bundle](https://github.com/thephpleague/flysystem-bundle).
+Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`, `asyncaws:`, etc.) ou le format legacy (`adapter` + `options`). Voir la [doc Flysystem Bundle](https://github.com/thephpleague/flysystem-bundle).
 
 ### Vue d'ensemble des adapters
 
@@ -88,8 +89,8 @@ Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`
 | Clé `storage` | Usage                                  | Package Composer (si non inclus)        |
 | ------------- | -------------------------------------- | --------------------------------------- |
 | `local`       | Fichiers sur le serveur                | inclus via `league/flysystem-bundle`    |
-| `aws`         | Amazon S3 (AWS SDK)                    | inclus (`league/flysystem-aws-s3-v3`)   |
-| `asyncaws`    | Amazon S3 (AsyncAws, plus léger)       | `league/flysystem-async-aws-s3`         |
+| `asyncaws`    | Amazon S3 (AsyncAws)                   | inclus (`league/flysystem-async-aws-s3`) |
+| `aws`         | Amazon S3 (AWS SDK, alternative)       | `league/flysystem-aws-s3-v3`            |
 | `azure`       | Azure Blob Storage                     | `league/flysystem-azure-blob-storage`   |
 | `gcloud`      | Google Cloud Storage                   | `league/flysystem-google-cloud-storage` |
 | `ftp`         | Serveur FTP                            | `league/flysystem-ftp`                  |
@@ -101,7 +102,7 @@ Le bloc `storage` accepte le format Flysystem Bundle 3.x (recommandé : `local:`
 | `service`     | Adapter personnalisé (service Symfony) | selon votre implémentation              |
 
 
-Les exemples ci-dessous utilisent le format Flysystem Bundle 3.x (`local:`, `aws:`, etc.). Chaque adapter optionnel doit être installé avant utilisation : `composer require <package>`.
+Les exemples ci-dessous utilisent le format Flysystem Bundle 3.x (`local:`, `asyncaws:`, etc.). Chaque adapter optionnel doit être installé avant utilisation : `composer require <package>`.
 
 ### Stockage local
 
@@ -133,21 +134,19 @@ storage:
 
 Assurez-vous que le répertoire existe et est accessible en écriture par PHP. Si les fichiers doivent être servis directement par le serveur web, placez-les sous `public/`.
 
-### Stockage S3 (AWS)
+### Stockage S3 (AsyncAws)
 
-L'adapter `league/flysystem-aws-s3-v3` est installé automatiquement avec le bundle. Il suffit de déclarer un client S3 (ex. dans `config/services.yaml`) :
+L'adapter `league/flysystem-async-aws-s3` est installé automatiquement avec le bundle. Déclarez un client AsyncAws (ex. dans `config/services.yaml`) :
 
 ```yaml
 services:
-  aws.s3.client:
-    class: Aws\S3\S3Client
+  asyncaws.s3.client:
+    class: AsyncAws\S3\S3Client
     arguments:
       -
         region: "%env(AWS_REGION)%"
-        version: "latest"
-        credentials:
-          key: "%env(AWS_ACCESS_KEY_ID)%"
-          secret: "%env(AWS_SECRET_ACCESS_KEY)%"
+        accessKeyId: "%env(AWS_ACCESS_KEY_ID)%"
+        accessKeySecret: "%env(AWS_SECRET_ACCESS_KEY)%"
 ```
 
 Puis configurez un disk S3 :
@@ -159,8 +158,8 @@ keyboardman_filemanager:
     s3:
       label: Médias S3
       storage:
-        aws:
-          client: aws.s3.client
+        asyncaws:
+          client: asyncaws.s3.client
           bucket: "%env(AWS_S3_BUCKET)%"
           prefix: uploads
         visibility: public
@@ -171,10 +170,10 @@ Format legacy équivalent :
 
 ```yaml
 storage:
-  adapter: aws
+  adapter: asyncaws
   visibility: public
   options:
-    client: aws.s3.client
+    client: asyncaws.s3.client
     bucket: "%env(AWS_S3_BUCKET)%"
     prefix: uploads
 ```
@@ -190,33 +189,62 @@ AWS_S3_BUCKET=my-bucket
 
 Le `prefix` est optionnel : il préfixe toutes les clés d'objets dans le bucket (ex. `uploads/photo.jpg`).
 
-### Stockage S3 (AsyncAws)
+#### Streaming vidéo S3 (seek, erreurs 500)
 
-Alternative légère à l'AWS SDK pour S3. Installez `league/flysystem-async-aws-s3` puis déclarez un client AsyncAws :
+La prévisualisation vidéo/audio dans le filemanager envoie des requêtes HTTP `Range` (seek dans la timeline). Trois modes de service sont possibles :
 
-```yaml
-# config/services.yaml
-services:
-  asyncaws.s3.client:
-    class: AsyncAws\S3\S3Client
-    arguments:
-      -
-        region: "%env(AWS_REGION)%"
-        accessKeyId: "%env(AWS_ACCESS_KEY_ID)%"
-        accessKeySecret: "%env(AWS_SECRET_ACCESS_KEY)%"
-```
+| Mode | Configuration | Quand l'utiliser |
+| ---- | ------------- | ---------------- |
+| **Proxy Symfony** (défaut) | Pas de `default_uri` | Bucket privé, contrôle d'accès côté app |
+| **URL S3 directe** | `default_uri` + bucket public | Performance, décharge le serveur PHP |
+| **URL présignée** | `signed_urls: true` | Bucket privé sans proxy |
+
+Exemple bucket privé avec URLs présignées :
 
 ```yaml
 keyboardman_filemanager:
   disks:
-    s3_async:
-      label: Médias S3 (AsyncAws)
+    s3:
+      label: Médias S3
       storage:
         asyncaws:
           client: asyncaws.s3.client
           bucket: "%env(AWS_S3_BUCKET)%"
           prefix: uploads
+      signed_urls: true
+      signed_url_ttl: 3600  # optionnel, défaut 3600 s
 ```
+
+Exemple bucket public avec URL directe (nécessite CORS) :
+
+```yaml
+      default_uri: "https://%env(AWS_S3_BUCKET)%.s3.%env(AWS_REGION)%.amazonaws.com/uploads"
+```
+
+**CORS requis** si le navigateur accède directement à S3 (`default_uri` ou URL présignée). Exemple de politique minimale :
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedOrigins": ["https://votre-app.example"],
+    "ExposeHeaders": ["Content-Range", "Accept-Ranges", "Content-Length", "ETag"]
+  }
+]
+```
+
+**Dépannage**
+
+| Symptôme | Cause probable | Solution |
+| -------- | -------------- | -------- |
+| Erreur 500 à la lecture/seek | Credentials S3 invalides ou objet introuvable | Vérifier les variables AWS et les logs Symfony |
+| Seek vidéo revient au début | Réponse `Range` incorrecte ou CORS manquant | Utiliser le proxy (sans `default_uri`) ou configurer CORS |
+| 403 sur URL directe | Bucket privé sans URL signée | Activer `signed_urls: true` ou passer par le proxy |
+
+Le proxy Symfony (`/kbd/filemanager/media/...`) gère nativement les requêtes `Range` pour S3 via AsyncAws `GetObject` — aucune configuration supplémentaire n'est requise si vous n'utilisez pas `default_uri`.
+
+> **Alternative AWS SDK** : si vous préférez l'AWS SDK officiel, installez `league/flysystem-aws-s3-v3` et utilisez la clé `aws:` à la place de `asyncaws:` dans la configuration storage. Le streaming par plages via le proxy n'est pas supporté avec cet adapter ; privilégiez AsyncAws pour S3.
 
 ### Stockage Azure Blob
 
@@ -437,8 +465,8 @@ keyboardman_filemanager:
     s3:
       label: Production S3
       storage:
-        aws:
-          client: aws.s3.client
+        asyncaws:
+          client: asyncaws.s3.client
           bucket: "%env(AWS_S3_BUCKET)%"
           prefix: media
       default_uri: "https://%env(AWS_S3_BUCKET)%.s3.%env(AWS_REGION)%.amazonaws.com/media"

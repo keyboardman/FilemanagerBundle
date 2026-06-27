@@ -121,7 +121,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * }
  * @psalm-type ServicesConfig = array{
  *     _defaults?: DefaultsType,
- *     _instanceof?: InstanceofType,
+ *     _instanceof?: array<class-string, InstanceofType>,
  *     ...<string, DefinitionType|AliasType|PrototypeType|StackType|ArgumentsType|null>
  * }
  * @psalm-type ExtensionType = array<string, mixed>
@@ -472,7 +472,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     },
  *     disallow_search_engine_index?: bool|Param, // Enabled by default when debug is enabled. // Default: true
  *     http_client?: bool|array{ // HTTP Client configuration
- *         enabled?: bool|Param, // Default: false
+ *         enabled?: bool|Param, // Default: true
  *         max_host_connections?: int|Param, // The maximum number of connections to a single host.
  *         default_options?: array{
  *             headers?: array<string, mixed>,
@@ -696,6 +696,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         label?: scalar|Param|null,
  *         visibility?: scalar|Param|null, // Default: "public"
  *         signed_urls?: bool|Param, // Default: false
+ *         signed_url_ttl?: int|Param, // Durée de validité des URLs présignées S3 en secondes (défaut 3600) // Default: 3600
  *         default_uri?: scalar|Param|null, // Default: null
  *     }>,
  *     iframe?: array{

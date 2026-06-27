@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Keyboardman\FilemanagerBundle\Twig;
 
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Keyboardman\FilemanagerBundle\Disk\DiskManager;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 
 class FilemanagerExtension extends AbstractExtension
 {
-    public function __construct(private readonly UrlGeneratorInterface $urlGenerator)
+    public function __construct(private readonly DiskManager $diskManager)
     {
     }
 
@@ -23,13 +23,6 @@ class FilemanagerExtension extends AbstractExtension
 
     public function resolveUrl(string $path, string $filesystem, bool $absolute = false): string
     {
-        return $this->urlGenerator->generate(
-            'keyboardman_filemanager_media',
-            [
-                'filesystem' => $filesystem,
-                'path' => ltrim($path, '/'),
-            ],
-            $absolute ? UrlGeneratorInterface::ABSOLUTE_URL : UrlGeneratorInterface::ABSOLUTE_PATH,
-        );
+        return $this->diskManager->publicUrl($filesystem, $path, $absolute);
     }
 }

@@ -45,6 +45,11 @@ class Configuration implements ConfigurationInterface
                                 ->defaultFalse()
                             ->end()
 
+                            ->integerNode('signed_url_ttl')
+                                ->defaultValue(3600)
+                                ->info('Durée de validité des URLs présignées S3 en secondes (défaut 3600)')
+                            ->end()
+
                             ->scalarNode('default_uri')
                                 ->defaultNull()
                             ->end()

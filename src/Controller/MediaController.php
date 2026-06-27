@@ -3,7 +3,10 @@
 namespace Keyboardman\FilemanagerBundle\Controller;
 
 use Keyboardman\FilemanagerBundle\Disk\DiskManager;
+use Keyboardman\FilemanagerBundle\Media\Streaming\MediaRangeReaderResolver;
+use Keyboardman\FilemanagerBundle\Media\Streaming\MediaStreamException;
 use League\Flysystem\FilesystemException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,8 +15,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class MediaController extends AbstractController
 {
-    public function __construct(private readonly DiskManager $diskManager)
-    {
+    public function __construct(
+        private readonly DiskManager $diskManager,
+        private readonly MediaRangeReaderResolver $rangeReaderResolver,
+        private readonly LoggerInterface $logger,
+    ) {
     }
 
     #[Route(
@@ -43,7 +49,13 @@ class MediaController extends AbstractController
 
             $fileSize = $fs->fileSize($normalizedPath);
             $mimeType = $this->diskManager->resolveMimeType($filesystem, $normalizedPath);
-        } catch (FilesystemException) {
+        } catch (FilesystemException $exception) {
+            $this->logger->warning('Media metadata lookup failed.', [
+                'filesystem' => $filesystem,
+                'path' => $normalizedPath,
+                'exception' => $exception,
+            ]);
+
             throw $this->createNotFoundException();
         }
 
@@ -51,12 +63,55 @@ class MediaController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $range = $request->headers->get('Range');
+        $range = $this->parseRange($request->headers->get('Range'), $fileSize);
+        if ($range instanceof Response) {
+            return $range;
+        }
+
+        [$start, $end, $status] = $range;
+        $length = $end - $start + 1;
+
+        $headers = [
+            'Content-Type' => $mimeType,
+            'Accept-Ranges' => 'bytes',
+            'Content-Length' => (string) $length,
+        ];
+
+        if (Response::HTTP_PARTIAL_CONTENT === $status) {
+            $headers['Content-Range'] = sprintf('bytes %d-%d/%d', $start, $end, $fileSize);
+        }
+
+        if (Request::METHOD_HEAD === $request->getMethod()) {
+            return new Response(null, $status, $headers);
+        }
+
+        try {
+            $output = $this->rangeReaderResolver->readRange($fs, $normalizedPath, $start, $length);
+        } catch (MediaStreamException $exception) {
+            $this->logger->error('Media range read failed before streaming.', [
+                'filesystem' => $filesystem,
+                'path' => $normalizedPath,
+                'start' => $start,
+                'length' => $length,
+                'exception' => $exception,
+            ]);
+
+            return new Response(null, Response::HTTP_BAD_GATEWAY);
+        }
+
+        return new StreamedResponse($output, $status, $headers);
+    }
+
+    /**
+     * @return array{0: int, 1: int, 2: int}|Response
+     */
+    private function parseRange(?string $rangeHeader, int $fileSize): array|Response
+    {
         $start = 0;
         $end = $fileSize - 1;
         $status = Response::HTTP_OK;
 
-        if (is_string($range) && preg_match('/bytes=(\d+)-(\d*)/', $range, $matches)) {
+        if (is_string($rangeHeader) && preg_match('/bytes=(\d+)-(\d*)/', $rangeHeader, $matches)) {
             $start = (int) $matches[1];
             $end = '' !== $matches[2] ? (int) $matches[2] : $fileSize - 1;
 
@@ -70,40 +125,6 @@ class MediaController extends AbstractController
             $status = Response::HTTP_PARTIAL_CONTENT;
         }
 
-        $length = $end - $start + 1;
-
-        $response = new StreamedResponse(function () use ($fs, $normalizedPath, $start, $length) {
-            $stream = $fs->readStream($normalizedPath);
-            if (!is_resource($stream)) {
-                return;
-            }
-
-            if ($start > 0) {
-                fseek($stream, $start);
-            }
-
-            $remaining = $length;
-            while ($remaining > 0 && !feof($stream)) {
-                $chunk = fread($stream, min(8192, $remaining));
-                if (false === $chunk) {
-                    break;
-                }
-
-                echo $chunk;
-                $remaining -= strlen($chunk);
-            }
-
-            fclose($stream);
-        }, $status);
-
-        $response->headers->set('Content-Type', $mimeType);
-        $response->headers->set('Accept-Ranges', 'bytes');
-        $response->headers->set('Content-Length', (string) $length);
-
-        if (Response::HTTP_PARTIAL_CONTENT === $status) {
-            $response->headers->set('Content-Range', sprintf('bytes %d-%d/%d', $start, $end, $fileSize));
-        }
-
-        return $response;
+        return [$start, $end, $status];
     }
 }

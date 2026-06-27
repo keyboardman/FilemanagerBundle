@@ -103,6 +103,7 @@ class KeyboardmanFilemanagerExtension extends Extension
         return [
             'visibility' => $diskConfig['visibility'] ?? 'public',
             'signed_urls' => $diskConfig['signed_urls'] ?? false,
+            'signed_url_ttl' => $diskConfig['signed_url_ttl'] ?? 3600,
             'default_uri' => $diskConfig['default_uri'] ?? null,
         ];
     }
