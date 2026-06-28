@@ -36,6 +36,10 @@ class S3ContentListTest extends TestCase
             $this->assertArrayHasKey('name', $item);
             $this->assertArrayHasKey('type', $item);
             $this->assertContains($item['type'], ['file', 'dir']);
+            $this->assertFalse(
+                str_starts_with($item['name'], '.'),
+                sprintf('Les entrées cachées ne doivent pas être listées : "%s"', $item['name']),
+            );
         }
     }
 
@@ -60,6 +64,13 @@ class S3ContentListTest extends TestCase
 
         $names = array_map(static fn (array $item): string => $item['name'], $items);
         fwrite(STDERR, sprintf("\n[DEBATS/] %d élément(s) en %.2fs : %s\n", \count($names), $elapsed, implode(', ', $names) ?: '(vide)'));
+
+        foreach ($items as $item) {
+            $this->assertFalse(
+                str_starts_with($item['name'], '.'),
+                sprintf('Les entrées cachées ne doivent pas être listées : "%s"', $item['name']),
+            );
+        }
     }
 
     public function testListObjectsV2FirstPageOnly(): void

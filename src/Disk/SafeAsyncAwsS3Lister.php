@@ -128,7 +128,7 @@ final class SafeAsyncAwsS3Lister
                 $seenPaths[$key] = true;
 
                 $itemPath = $this->prefixer->stripPrefix($key);
-                if ($itemPath === $normalizedPath) {
+                if ($itemPath === $normalizedPath || HiddenPath::isHidden($itemPath)) {
                     continue;
                 }
 
@@ -143,7 +143,7 @@ final class SafeAsyncAwsS3Lister
                 $seenPaths[$prefix] = true;
 
                 $itemPath = rtrim($this->prefixer->stripPrefix($prefix), '/');
-                if ($itemPath === $normalizedPath) {
+                if ($itemPath === $normalizedPath || HiddenPath::isHidden($itemPath)) {
                     continue;
                 }
 

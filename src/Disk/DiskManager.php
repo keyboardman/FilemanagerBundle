@@ -18,8 +18,6 @@ class DiskManager
     /** @var Disk[] */
     private array $disks = [];
 
-    private const HIDDEN_PREFIX = '.';
-
     private const EXTENSION_MIME = [
         'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif',
         'webp' => 'image/webp', 'svg' => 'image/svg+xml', 'bmp' => 'image/bmp', 'ico' => 'image/x-icon',
@@ -100,8 +98,7 @@ class DiskManager
             foreach ($this->iterateListing($fs, $path, false) as $item) {
                 $itemPath = $item->path();
 
-                // ✅ Ignorer fichiers et dossiers cachés
-                if ($this->isHidden($itemPath)) {
+                if (HiddenPath::isHidden($itemPath)) {
                     continue;
                 }
 
@@ -381,7 +378,11 @@ class DiskManager
                 throw new \RuntimeException('Le dossier cible est introuvable.');
             }
 
-            foreach ($this->iterateListing($fs, $normalizedPath, false) as $_item) {
+            foreach ($this->iterateListing($fs, $normalizedPath, false) as $item) {
+                if (HiddenPath::isHidden($item->path())) {
+                    continue;
+                }
+
                 throw new \RuntimeException('Le dossier doit être vide pour être supprimé.');
             }
 
@@ -500,13 +501,6 @@ class DiskManager
         $ext = strtolower(pathinfo($path, \PATHINFO_EXTENSION));
 
         return self::EXTENSION_MIME[$ext] ?? null;
-    }
-
-    private function isHidden(string $key): bool
-    {
-        $basename = basename($key);
-
-        return '' !== $basename && str_starts_with($basename, self::HIDDEN_PREFIX);
     }
 
     private function assertValidDirectoryName(string $name): void
