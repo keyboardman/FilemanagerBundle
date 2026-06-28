@@ -5,7 +5,21 @@
 		<title>Filemanager</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"> {% block stylesheets %}{% endblock %}{% block javascripts %}{% endblock %}
 		<link rel="stylesheet" href="{{ asset('bundles/keyboardmanfilemanager/filemanager.css') }}">
+		<style>
+			.kbd_sidebar {
+				width: 33%;
+			}
 
+			.kbd_sidebar .nav-link {
+				padding: 0.5rem;
+				font-size: 0.875rem;
+			}
+
+			.kbd_main {
+				width: 66%;
+				font-size: 0.875rem;
+			}
+		</style>
 	</head>
 	<body>
 		{% block body %}
