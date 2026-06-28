@@ -9,6 +9,9 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * Extension Symfony chargeant la configuration et enregistrant les services du bundle.
+ */
 class KeyboardmanFilemanagerExtension extends Extension
 {
     public function getAlias(): string
@@ -68,6 +71,7 @@ class KeyboardmanFilemanagerExtension extends Extension
         $loader->load('services.yaml');
     }
 
+    /** Retourne l'identifiant du service de stockage Flysystem pour un disque. */
     public static function storageServiceId(string $diskName): string
     {
         return sprintf('keyboardman_filemanager.%s.storage', $diskName);

@@ -5,6 +5,9 @@ namespace Keyboardman\FilemanagerBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
+/**
+ * Définition de l'arbre de configuration du bundle (disques, iframe, upload).
+ */
 class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder

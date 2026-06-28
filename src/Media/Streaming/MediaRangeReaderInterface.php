@@ -4,8 +4,12 @@ namespace Keyboardman\FilemanagerBundle\Media\Streaming;
 
 use League\Flysystem\FilesystemOperator;
 
+/**
+ * Contrat pour la lecture partielle (byte range) d'un fichier média.
+ */
 interface MediaRangeReaderInterface
 {
+    /** Indique si ce lecteur prend en charge le filesystem donné. */
     public function supports(FilesystemOperator $filesystem): bool;
 
     /**

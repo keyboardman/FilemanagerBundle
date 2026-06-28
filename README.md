@@ -190,17 +190,26 @@ AWS_S3_BUCKET=my-bucket
 
 Le `prefix` est optionnel : il préfixe toutes les clés d'objets dans le bucket (ex. `uploads/photo.jpg`).
 
-#### Streaming vidéo S3 (seek, erreurs 500)
+#### URLs publiques et streaming S3
 
-La prévisualisation vidéo/audio dans le filemanager envoie des requêtes HTTP `Range` (seek dans la timeline). Trois modes de service sont possibles :
+Deux usages distincts :
 
-| Mode | Configuration | Quand l'utiliser |
-| ---- | ------------- | ---------------- |
-| **Proxy Symfony** (défaut) | Pas de `default_uri` | Bucket privé, contrôle d'accès côté app |
-| **URL S3 directe** | `default_uri` + bucket public | Performance, décharge le serveur PHP |
-| **URL présignée** | `signed_urls: true` | Bucket privé sans proxy |
+| Usage | Méthode / filtre | URL retournée |
+| ----- | ---------------- | ------------- |
+| **Sélection filemanager, champs formulaire, API upload** | `publicUrl()` / `resolve_url` | URL **stable** : route proxy `/kbd/filemanager/media/...` (ou `default_uri` permanente si configurée) |
+| **Accès HTTP au média** | `MediaController` | **Redirect 307** vers une URL S3 directe ou présignée fraîche (`resolveDirectMediaUrl`) |
 
-Exemple bucket privé avec URLs présignées :
+Ainsi, une URL stockée dans un input ne expire jamais : à chaque ouverture ou lecture (vidéo, `<img>`, téléchargement), Symfony génère une nouvelle URL signée si nécessaire.
+
+La prévisualisation vidéo/audio envoie des requêtes HTTP `Range` (seek). Trois modes de service à l'accès :
+
+| Mode | Configuration | Comportement à l'accès |
+| ---- | ------------- | ---------------------- |
+| **Redirect S3 présignée** (défaut AsyncAws) | `signed_urls: true` ou adapter AsyncAws | Redirect vers URL présignée (TTL via `signed_url_ttl`) |
+| **Redirect S3 directe** | `default_uri` + bucket public | Redirect vers l'URL publique du bucket |
+| **Proxy Symfony** | `proxy_media: true` | Pas de redirect : flux servi par PHP avec support `Range` |
+
+Exemple bucket privé (URL stable en sélection, présignée à la lecture) :
 
 ```yaml
 keyboardman_filemanager:
@@ -216,13 +225,13 @@ keyboardman_filemanager:
       signed_url_ttl: 3600  # optionnel, défaut 3600 s
 ```
 
-Exemple bucket public avec URL directe (nécessite CORS) :
+Exemple bucket public avec URL directe permanente (sélection et accès sans expiration) :
 
 ```yaml
       default_uri: "https://%env(AWS_S3_BUCKET)%.s3.%env(AWS_REGION)%.amazonaws.com/uploads"
 ```
 
-**CORS requis** si le navigateur accède directement à S3 (`default_uri` ou URL présignée). Exemple de politique minimale :
+**CORS requis** si le navigateur accède directement à S3 après redirect (`default_uri` ou URL présignée). Exemple de politique minimale :
 
 ```json
 [
@@ -240,14 +249,13 @@ Exemple bucket public avec URL directe (nécessite CORS) :
 | Symptôme | Cause probable | Solution |
 | -------- | -------------- | -------- |
 | Erreur 500 à la lecture/seek | Credentials S3 invalides ou objet introuvable | Vérifier les variables AWS et les logs Symfony |
-| Seek vidéo revient au début | Réponse `Range` incorrecte ou CORS manquant | Utiliser le proxy (`proxy_media: true`) ou configurer CORS sur le bucket |
-| Timeouts / lenteur | Chaque média repasse par PHP (proxy) | Laisser `proxy_media: false` (défaut) pour utiliser les URLs signées S3 |
+| Seek vidéo revient au début | Réponse `Range` incorrecte ou CORS manquant | Utiliser `proxy_media: true` ou configurer CORS sur le bucket |
+| Timeouts / lenteur | Chaque média repasse par PHP (proxy) | Laisser `proxy_media: false` (défaut) : redirect S3 sans télécharger via PHP |
 | Boucle de redirection | `default_uri` pointe vers `/kbd/filemanager/media/` | `default_uri` doit être l'URL S3 directe, pas le proxy Symfony |
-| 403 sur URL directe | Bucket privé sans URL signée | Activer `signed_urls: true` ou passer par le proxy |
+| 403 sur URL directe | Bucket privé sans URL signée | Activer `signed_urls: true` ou `proxy_media: true` |
+| URL en base expirée | Ancienne URL présignée stockée directement | Utiliser l'URL proxy retournée par le filemanager (`resolve_url`) |
 
-Le proxy Symfony (`/kbd/filemanager/media/...`) gère nativement les requêtes `Range` pour S3 via AsyncAws `GetObject` — **mais par défaut les disks AsyncAws utilisent des URLs signées** : le navigateur accède directement à S3 sans télécharger chaque fichier via PHP (évite les timeouts).
-
-Pour forcer le proxy (contrôle d'accès Symfony), activez `proxy_media: true` sur le disk :
+Pour forcer le proxy (contrôle d'accès Symfony, pas de redirect S3), activez `proxy_media: true` sur le disk :
 
 ```yaml
       proxy_media: true

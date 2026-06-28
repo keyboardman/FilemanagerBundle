@@ -5,18 +5,18 @@
 		{% if filter.path != '' %}
 			{% set parentPath = filter.path|trim('/', 'right')|split('/')|slice(0, -1)|join('/') %}
 			<li class="nav-item">
-				<a class="nav-link" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': parentPath})) }}">
-					<i class="bi bi-folder-fill text-warning me-2"></i>
-					..
+				<a class="nav-link small d-flex align-items-center overflow-hidden" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': parentPath})) }}">
+					<i class="bi bi-folder-fill text-warning me-2 flex-shrink-0"></i>
+					<span class="text-truncate">..</span>
 				</a>
 			</li>
 		{% endif %}
 
 		{% for directory in directories %}
 			<li class="nav-item d-flex align-items-center justify-content-between">
-				<a class="nav-link flex-grow-1" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': directory.path})) }}">
-					<i class="bi bi-folder-fill text-warning me-2"></i>
-					{{ directory.name }}
+				<a class="nav-link flex-grow-1 small d-flex align-items-center overflow-hidden" href="{{ path('keyboardman_filemanager', app.request.query.all()|merge({'path': directory.path})) }}">
+					<i class="bi bi-folder-fill text-warning me-2 flex-shrink-0"></i>
+					<span class="text-truncate">{{ directory.name }}</span>
 				</a>
 				<button
 					class="btn btn-sm btn-link text-secondary file-rename"

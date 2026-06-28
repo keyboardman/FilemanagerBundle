@@ -5,6 +5,9 @@ namespace Keyboardman\FilemanagerBundle\Upload;
 use Keyboardman\FilemanagerBundle\Disk\DiskManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
+/**
+ * Gère les uploads fragmentés (chunked) avec assemblage et envoi vers Flysystem.
+ */
 class ChunkUploadManager
 {
     private readonly string $tempBase;
@@ -18,7 +21,12 @@ class ChunkUploadManager
     }
 
     /**
-     * @return array<string, mixed>
+     * Reçoit un fragment d'upload et assemble le fichier complet au dernier fragment.
+     *
+     * @return array<string, mixed> Résultat avec success, uploadId et éventuellement path/url
+     *
+     * @throws \InvalidArgumentException Si les paramètres ou la séquence sont invalides
+     * @throws \RuntimeException         En cas d'erreur d'assemblage ou d'écriture
      */
     public function receiveChunk(
         string $uploadId,

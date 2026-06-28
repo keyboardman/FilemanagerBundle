@@ -62,6 +62,7 @@
         "test": "phpunit",
         "cs-fix": "php-cs-fixer fix",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
-        "phpstan": "phpstan analyse --memory-limit=512M"
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "phpdoc": "php tools/phpDocumentor.phar --config=phpdoc.dist.xml"
     }
 }

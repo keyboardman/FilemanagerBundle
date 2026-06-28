@@ -2,7 +2,8 @@
 	<div class="ratio ratio-16x9 mb-2">
 		{% include '@KeyboardmanFilemanager/components/file_preview.html.twig' with {'file': file, 'filter': filter} %}
 	</div>
-	<h6 class="text-truncate">{{file.name}}</h6>
+	
+	<div class="small text-truncate mb-1">{{ file.name }}</div>
 	<div class="d-flex gap-2 flex-wrap">
 		<a href="{{ file.path|resolve_url(filter.filesystem) }}" class="btn btn-sm btn-success" download>
 			<i class="bi bi-download"></i>

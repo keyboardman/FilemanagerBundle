@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Sert les médias avec support des requêtes Range (streaming) ou redirection S3.
+ */
 class MediaController extends AbstractController
 {
     public function __construct(
@@ -29,6 +32,9 @@ class MediaController extends AbstractController
         requirements: ['path' => '.+'],
         methods: ['GET', 'HEAD'],
     )]
+    /**
+     * Sert un fichier média (redirect S3 ou streaming proxy avec Range).
+     */
     public function serve(string $filesystem, string $path, Request $request): Response
     {
         if (!$this->diskManager->has($filesystem)) {
@@ -109,6 +115,8 @@ class MediaController extends AbstractController
     }
 
     /**
+     * Parse l'en-tête HTTP Range et retourne les bornes de lecture.
+     *
      * @return array{0: int, 1: int, 2: int}|Response
      */
     private function parseRange(?string $rangeHeader, int $fileSize): array|Response

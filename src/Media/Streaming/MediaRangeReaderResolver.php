@@ -4,6 +4,9 @@ namespace Keyboardman\FilemanagerBundle\Media\Streaming;
 
 use League\Flysystem\FilesystemOperator;
 
+/**
+ * Sélectionne le lecteur de range adapté au type d'adaptateur Flysystem.
+ */
 final class MediaRangeReaderResolver
 {
     /**
@@ -14,7 +17,9 @@ final class MediaRangeReaderResolver
     }
 
     /**
-     * @throws MediaStreamException
+     * Retourne un callable qui émet les octets demandés.
+     *
+     * @throws MediaStreamException Si aucun lecteur ne peut lire le fichier
      */
     public function readRange(FilesystemOperator $filesystem, string $path, int $start, int $length): callable
     {

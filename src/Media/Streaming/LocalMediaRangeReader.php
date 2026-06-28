@@ -5,6 +5,9 @@ namespace Keyboardman\FilemanagerBundle\Media\Streaming;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\FilesystemOperator;
 
+/**
+ * Lecteur de range pour les fichiers locaux via fseek sur le flux Flysystem.
+ */
 final class LocalMediaRangeReader implements MediaRangeReaderInterface
 {
     public function supports(FilesystemOperator $filesystem): bool

@@ -6,6 +6,9 @@ use AsyncAws\Core\Exception\Http\ClientException;
 use League\Flysystem\AsyncAwsS3\AsyncAwsS3Adapter;
 use League\Flysystem\FilesystemOperator;
 
+/**
+ * Lecteur de range optimisé pour les fichiers S3 via AsyncAws (requête Range native).
+ */
 final class AsyncAwsS3MediaRangeReader implements MediaRangeReaderInterface
 {
     public function supports(FilesystemOperator $filesystem): bool

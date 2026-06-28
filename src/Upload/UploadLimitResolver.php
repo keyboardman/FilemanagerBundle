@@ -2,6 +2,9 @@
 
 namespace Keyboardman\FilemanagerBundle\Upload;
 
+/**
+ * Calcule les limites d'upload fragmenté en fonction des directives PHP ini.
+ */
 class UploadLimitResolver
 {
     private const SAFETY_RATIO = 0.85;
@@ -9,6 +12,8 @@ class UploadLimitResolver
     private const MIN_CHUNK_SIZE = 262144; // 256 Ko
 
     /**
+     * Ajuste la taille et le seuil des fragments selon upload_max_filesize et post_max_size.
+     *
      * @return array{chunk_size: int, chunk_threshold: int}
      */
     public function resolve(int $configuredChunkSize, int $configuredChunkThreshold): array
@@ -24,6 +29,7 @@ class UploadLimitResolver
         ];
     }
 
+    /** Retourne la taille maximale sûre d'un fragment en octets. */
     public function maxSafeChunkSize(): int
     {
         $uploadMax = $this->parseIniSize(ini_get('upload_max_filesize') ?: '2M');

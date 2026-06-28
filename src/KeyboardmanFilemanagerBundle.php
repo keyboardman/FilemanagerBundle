@@ -6,6 +6,9 @@ use Keyboardman\FilemanagerBundle\DependencyInjection\KeyboardmanFilemanagerExte
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
+/**
+ * Bundle Symfony Keyboardman Filemanager.
+ */
 final class KeyboardmanFilemanagerBundle extends AbstractBundle
 {
     public function getPath(): string

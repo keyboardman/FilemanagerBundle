@@ -10,6 +10,9 @@ use League\Flysystem\FilesystemException;
 use League\Flysystem\UnableToGenerateTemporaryUrl;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * Gestionnaire central des disques Flysystem : listage, upload, suppression et URLs publiques.
+ */
 class DiskManager
 {
     /** @var Disk[] */
@@ -39,6 +42,11 @@ class DiskManager
         }
     }
 
+    /**
+     * Retourne un disque par son nom.
+     *
+     * @throws \InvalidArgumentException Si le disque est introuvable
+     */
     public function disk(string $name): Disk
     {
         if (!isset($this->disks[$name])) {
@@ -64,13 +72,23 @@ class DiskManager
         return array_keys($this->disks);
     }
 
+    /** Indique si un disque est enregistré sous le nom donné. */
     public function has(string $name): bool
     {
         return isset($this->disks[$name]);
     }
 
     /**
+     * Liste le contenu d'un répertoire avec filtrage média et tri.
+     *
+     * @param string      $filesystem Identifiant du disque
+     * @param string      $path       Chemin du répertoire
+     * @param string|null $media      Filtre par type média (image, audio, video)
+     * @param string      $sort       Ordre de tri (name_asc ou name_desc)
+     *
      * @return list<array<string, mixed>>
+     *
+     * @throws \RuntimeException En cas d'erreur Flysystem
      */
     public function list(string $filesystem, string $path, ?string $media = null, string $sort = 'name_asc'): array
     {
@@ -150,9 +168,17 @@ class DiskManager
      */
     private function iterateListing(\League\Flysystem\FilesystemOperator $filesystem, string $path, bool $deep): iterable
     {
+        $s3Lister = SafeAsyncAwsS3Lister::tryFromAdapter(
+            FlysystemAdapterExtractor::extractAsyncAwsS3Adapter($filesystem),
+        );
+
+        $listing = null !== $s3Lister
+            ? $s3Lister->listContents($path, $deep)
+            : $filesystem->listContents($path, $deep);
+
         $seenPaths = [];
 
-        foreach ($filesystem->listContents($path, $deep) as $item) {
+        foreach ($listing as $item) {
             $itemPath = $item->path();
             if (isset($seenPaths[$itemPath])) {
                 break;
@@ -163,6 +189,39 @@ class DiskManager
         }
     }
 
+    /** Vérifie si un répertoire existe sur le disque donné. */
+    public function directoryExists(string $filesystem, string $path): bool
+    {
+        $normalizedPath = trim($path, '/');
+        if ('' === $normalizedPath) {
+            return true;
+        }
+
+        $fs = $this->disk($filesystem)->filesystem();
+        $s3Lister = SafeAsyncAwsS3Lister::tryFromAdapter(
+            FlysystemAdapterExtractor::extractAsyncAwsS3Adapter($fs),
+        );
+
+        if (null !== $s3Lister) {
+            return $s3Lister->directoryExists($normalizedPath);
+        }
+
+        return $fs->directoryExists($normalizedPath);
+    }
+
+    /**
+     * Upload un fichier local vers le disque.
+     *
+     * @param string      $filesystem    Identifiant du disque
+     * @param string      $path          Répertoire de destination
+     * @param string      $localFilePath Chemin du fichier source sur le disque local
+     * @param string|null $newFilename   Nom de fichier cible (basename par défaut)
+     *
+     * @return string Chemin final du fichier sur le disque
+     *
+     * @throws \InvalidArgumentException Si le fichier source est invalide
+     * @throws \RuntimeException         En cas d'erreur Flysystem
+     */
     public function upload(
         string $filesystem,
         string $path,
@@ -241,6 +300,14 @@ class DiskManager
         }
     }
 
+    /**
+     * Crée un sous-répertoire dans le chemin parent donné.
+     *
+     * @return string Chemin du nouveau répertoire (avec slash final)
+     *
+     * @throws \InvalidArgumentException Si le nom est invalide
+     * @throws \RuntimeException         Si le répertoire existe déjà ou en cas d'erreur Flysystem
+     */
     public function createDirectory(string $filesystem, string $parentPath, string $directoryName): string
     {
         $this->assertValidDirectoryName($directoryName);
@@ -268,6 +335,12 @@ class DiskManager
         }
     }
 
+    /**
+     * Supprime un fichier du disque.
+     *
+     * @throws \InvalidArgumentException Si le chemin est invalide
+     * @throws \RuntimeException         Si le fichier est introuvable ou en cas d'erreur Flysystem
+     */
     public function deleteFile(string $filesystem, string $path): void
     {
         $normalizedPath = trim($path, '/');
@@ -288,6 +361,12 @@ class DiskManager
         }
     }
 
+    /**
+     * Supprime un répertoire vide.
+     *
+     * @throws \InvalidArgumentException Si le chemin est invalide
+     * @throws \RuntimeException         Si le répertoire n'est pas vide ou est introuvable
+     */
     public function deleteEmptyDirectory(string $filesystem, string $path): void
     {
         $normalizedPath = trim($path, '/');
@@ -312,19 +391,29 @@ class DiskManager
         }
     }
 
+    /**
+     * Retourne l'URL publique d'un fichier (directe, signée ou via proxy).
+     *
+     * @param bool $absolute Génère une URL absolue si true
+     */
     public function publicUrl(string $filesystem, string $path, bool $absolute = false): string
     {
-        $directUrl = $this->resolveDirectMediaUrl($filesystem, $path);
-        if (null !== $directUrl) {
-            return $directUrl;
+        $disk = $this->disk($filesystem);
+        $path = ltrim($path, '/');
+
+        if (!$disk->usesProxyMedia() && ($base = $disk->getDefaultUri())) {
+            $url = rtrim($base, '/').'/'.$path;
+            if (!$this->isMediaProxyUrl($url)) {
+                return $url;
+            }
         }
 
         return $this->mediaProxyUrl($filesystem, $path, $absolute);
     }
 
     /**
-     * URL S3 directe ou signée, sans repasser par le proxy Symfony.
-     * Retourne null si le disk est configuré pour proxifier les médias.
+     * URL S3 directe ou signée pour servir le média (redirect MediaController).
+     * Retourne null si le disk est configuré pour proxifier le flux (proxy_media).
      */
     public function resolveDirectMediaUrl(string $filesystem, string $path): ?string
     {
@@ -381,6 +470,9 @@ class DiskManager
         }
     }
 
+    /**
+     * Résout le type MIME d'un fichier (détecté, extension ou Flysystem).
+     */
     public function resolveMimeType(string $filesystem, string $path, ?string $detectedMimeType = null): string
     {
         if (is_string($detectedMimeType) && '' !== $detectedMimeType) {

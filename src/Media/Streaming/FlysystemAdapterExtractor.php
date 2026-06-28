@@ -8,8 +8,12 @@ use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\FilesystemOperator;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 
+/**
+ * Utilitaires pour extraire l'adaptateur Flysystem sous-jacent (S3, local, décorateurs).
+ */
 final class FlysystemAdapterExtractor
 {
+    /** Extrait l'adaptateur brut d'un Filesystem Flysystem. */
     public static function extractAdapter(FilesystemOperator $filesystem): ?FilesystemAdapter
     {
         if (!$filesystem instanceof Filesystem) {
@@ -28,6 +32,7 @@ final class FlysystemAdapterExtractor
         return $adapter instanceof FilesystemAdapter ? $adapter : null;
     }
 
+    /** Extrait l'adaptateur AsyncAws S3, y compris via des décorateurs. */
     public static function extractAsyncAwsS3Adapter(FilesystemOperator $filesystem): ?AsyncAwsS3Adapter
     {
         $adapter = self::extractAdapter($filesystem);
@@ -35,6 +40,7 @@ final class FlysystemAdapterExtractor
         return self::unwrapAsyncAwsS3Adapter($adapter);
     }
 
+    /** Indique si le filesystem utilise un adaptateur local. */
     public static function isLocalAdapter(FilesystemOperator $filesystem): bool
     {
         $adapter = self::extractAdapter($filesystem);
@@ -42,6 +48,7 @@ final class FlysystemAdapterExtractor
         return $adapter instanceof LocalFilesystemAdapter;
     }
 
+    /** Indique si le filesystem supporte les URLs temporaires (S3). */
     public static function supportsTemporaryUrls(FilesystemOperator $filesystem): bool
     {
         return null !== self::extractAsyncAwsS3Adapter($filesystem);

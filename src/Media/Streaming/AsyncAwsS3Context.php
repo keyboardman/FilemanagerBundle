@@ -6,6 +6,9 @@ use AsyncAws\S3\S3Client;
 use League\Flysystem\AsyncAwsS3\AsyncAwsS3Adapter;
 use League\Flysystem\PathPrefixer;
 
+/**
+ * Contexte S3 extrait d'un adaptateur AsyncAws (client, bucket, préfixe).
+ */
 final class AsyncAwsS3Context
 {
     public function __construct(
@@ -15,6 +18,7 @@ final class AsyncAwsS3Context
     ) {
     }
 
+    /** Crée un contexte à partir d'un adaptateur AsyncAws S3. */
     public static function fromAdapter(AsyncAwsS3Adapter $adapter): self
     {
         $reflection = new \ReflectionClass($adapter);
@@ -35,16 +39,19 @@ final class AsyncAwsS3Context
         );
     }
 
+    /** Retourne le client S3 AsyncAws. */
     public function client(): S3Client
     {
         return $this->client;
     }
 
+    /** Retourne le nom du bucket S3. */
     public function bucket(): string
     {
         return $this->bucket;
     }
 
+    /** Retourne la clé objet S3 complète (avec préfixe) pour un chemin relatif. */
     public function objectKey(string $path): string
     {
         return $this->prefixer->prefixPath($path);

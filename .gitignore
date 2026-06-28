@@ -5,4 +5,5 @@ build/
 .phpunit.cache/
 .php-cs-fixer.cache/
 var/
+docs/api/
 .env.test.local

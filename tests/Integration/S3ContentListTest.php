@@ -39,6 +39,29 @@ class S3ContentListTest extends TestCase
         }
     }
 
+    public function testDebatsDirectoryExistsAndLists(): void
+    {
+        if (!S3ContentTestFactory::isConfigured()) {
+            self::markTestSkipped('Variables S3_CONTENT_* absentes.');
+        }
+
+        $diskManager = S3ContentTestFactory::createDiskManager();
+
+        $this->assertTrue(
+            $diskManager->directoryExists(S3ContentTestFactory::DISK_NAME, 'DEBATS/'),
+            'DEBATS/ doit exister (dossier vide ou CommonPrefixes S3).',
+        );
+
+        $start = microtime(true);
+        $items = $diskManager->list(S3ContentTestFactory::DISK_NAME, 'DEBATS/', null, 'name_asc');
+        $elapsed = microtime(true) - $start;
+
+        $this->assertLessThan(15.0, $elapsed, 'Le listing DEBATS/ ne doit pas boucler indéfiniment.');
+
+        $names = array_map(static fn (array $item): string => $item['name'], $items);
+        fwrite(STDERR, sprintf("\n[DEBATS/] %d élément(s) en %.2fs : %s\n", \count($names), $elapsed, implode(', ', $names) ?: '(vide)'));
+    }
+
     public function testListObjectsV2FirstPageOnly(): void
     {
         if (!S3ContentTestFactory::isConfigured()) {

@@ -10,7 +10,9 @@ La documentation d'installation SHALL lister les prérequis nécessaires pour ut
 #### Scenario: Prérequis listés
 
 - **WHEN** un développeur consulte la documentation d'installation
-- **THEN** il trouve la liste des prérequis : PHP 8.2+, Symfony 8.x, league/flysystem, league/flysystem-bundle, symfony/asset-mapper
+- **THEN** il trouve la liste des prérequis : PHP 8.2+, Symfony 8.x, symfony/asset-mapper
+- **AND** il est indiqué que `league/flysystem` et `league/flysystem-bundle` sont installés automatiquement avec le bundle
+- **AND** il est indiqué que `League\FlysystemBundle\FlysystemBundle` doit être enregistré dans `config/bundles.php`
 
 ---
 
@@ -23,31 +25,20 @@ La documentation SHALL expliquer comment installer le bundle via Composer.
 - **WHEN** un développeur suit la documentation
 - **THEN** il peut installer le bundle avec `composer require keyboardman/filemanager-bundle` ou via un dépôt path
 - **AND** il sait enregistrer le bundle dans `config/bundles.php`
-
----
-
-### Requirement: Documentation de la configuration Flysystem
-
-La documentation SHALL fournir des exemples de configuration Flysystem pour mapper les storages.
-
-#### Scenario: Configuration multi-storage
-
-- **WHEN** un développeur configure Flysystem
-- **THEN** il trouve un exemple `flysystem.yaml` avec au moins deux storages (ex. default.storage, public.storage)
-- **AND** chaque storage définit adapter, visibility et options (directory)
+- **AND** il n'a pas besoin d'exécuter une commande Composer séparée pour Flysystem
 
 ---
 
 ### Requirement: Documentation de la configuration keyboardman_filemanager
 
-La documentation SHALL expliquer comment configurer les disks du filemanager et les lier aux storages Flysystem.
+La documentation SHALL expliquer comment configurer les disks du filemanager avec une section `storage` inline définissant l'adapter Flysystem.
 
-#### Scenario: Mapping disks vers Flysystem
+#### Scenario: Configuration disks avec stockage inline
 
 - **WHEN** un développeur configure keyboardman_filemanager
 - **THEN** il trouve un exemple `keyboardman_filemanager.yaml` avec la structure disks
-- **AND** chaque disk définit label, storage (référence au service Flysystem), visibility, signed_urls, default_uri
-- **AND** la documentation précise que le champ storage référence un storage défini dans flysystem.yaml
+- **AND** chaque disk définit `label`, `storage` (adapter, visibility, options), `signed_urls`, `default_uri`
+- **AND** la documentation précise qu'aucun fichier `flysystem.yaml` séparé n'est requis pour le filemanager
 
 ---
 
@@ -97,4 +88,29 @@ La documentation SHALL expliquer comment inclure le modal et le script filemanag
 - **WHEN** un développeur utilise le FilemanagerType dans une page
 - **THEN** il sait qu'il doit inclure `@KeyboardmanFilemanager/iframe/modal.html.twig` dans le template
 - **AND** le modal fournit la structure HTML (#filemanager-modal) et charge filemanager-field.css et filemanager-field.js
+
+---
+
+### Requirement: Documentation S3 pour le streaming vidéo
+
+La documentation d'installation MUST inclure une section dédiée à la configuration S3 pour la lecture et le seek de vidéos/audio.
+
+#### Scenario: Configuration CORS documentée
+
+- **WHEN** un développeur configure un disk S3 avec `default_uri`
+- **THEN** il trouve un exemple de politique CORS S3 autorisant `GET`, `HEAD` et exposant `Content-Range`, `Accept-Ranges`, `Content-Length`
+- **AND** la documentation explique que sans CORS le seek vidéo échoue côté navigateur
+
+#### Scenario: Choix proxy vs URL directe
+
+- **WHEN** un développeur hésite entre proxy Symfony et URL S3 directe
+- **THEN** la documentation explique que le proxy est recommandé pour les buckets privés
+- **AND** que `default_uri` + bucket public + CORS convient pour décharger le serveur
+- **AND** que `signed_urls: true` génère des URLs présignées pour les buckets privés sans exposer le bucket
+
+#### Scenario: Dépannage erreurs 500 et seek
+
+- **WHEN** un développeur rencontre des erreurs 500 ou un seek vidéo qui revient au début
+- **THEN** la documentation liste les causes courantes (flux S3 non seekable, CORS manquant, credentials invalides, `default_uri` incorrect)
+- **AND** propose les vérifications à effectuer (requête Range manuelle, logs Symfony, configuration disk)
 

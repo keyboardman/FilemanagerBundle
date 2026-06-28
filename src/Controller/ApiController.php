@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/filemanager')]
+/**
+ * API REST pour les opérations du filemanager (listage, upload, renommage, suppression).
+ */
 class ApiController extends AbstractController
 {
     public function __construct(
@@ -21,6 +24,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/list', name: 'keyboardman_filemanager_api_list')]
+    /** Liste le contenu d'un répertoire sur le disque demandé. */
     public function list(QueryFilterFactory $queryFactory, Request $request): JsonResponse
     {
         try {
@@ -37,6 +41,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/upload', name: 'keyboardman_filemanager_api_upload', methods: ['POST'])]
+    /** Upload un fichier complet vers le disque. */
     public function upload(Request $request): JsonResponse
     {
         /** @var UploadedFile|null $uploadedFile */
@@ -70,6 +75,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/upload-chunk', name: 'keyboardman_filemanager_api_upload_chunk', methods: ['POST'])]
+    /** Reçoit un fragment d'upload pour les gros fichiers. */
     public function uploadChunk(Request $request): JsonResponse
     {
         /** @var UploadedFile|null $chunk */
@@ -119,6 +125,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/rename', name: 'keyboardman_filemanager_api_rename', methods: ['POST'])]
+    /** Renomme un fichier ou un dossier. */
     public function rename(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -157,6 +164,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/create-directory', name: 'keyboardman_filemanager_api_create_directory', methods: ['POST'])]
+    /** Crée un nouveau répertoire. */
     public function createDirectory(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -194,6 +202,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/delete-file', name: 'keyboardman_filemanager_api_delete_file', methods: ['POST'])]
+    /** Supprime un fichier. */
     public function deleteFile(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -229,6 +238,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/delete-directory', name: 'keyboardman_filemanager_api_delete_directory', methods: ['POST'])]
+    /** Supprime un répertoire vide. */
     public function deleteDirectory(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);

@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class DiskManagerPublicUrlTest extends TestCase
 {
-    public function testSignedUrlUsesTemporaryUrlGenerator(): void
+    public function testPublicUrlReturnsStableProxyForAsyncAwsDisk(): void
     {
         $client = new S3Client([
             'accessKeyId' => 'test',
@@ -29,16 +29,22 @@ class DiskManagerPublicUrlTest extends TestCase
         ]);
 
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator
+            ->expects($this->once())
+            ->method('generate')
+            ->with(
+                'keyboardman_filemanager_media',
+                ['filesystem' => 's3', 'path' => 'clip.mp4'],
+                UrlGeneratorInterface::ABSOLUTE_PATH,
+            )
+            ->willReturn('/kbd/filemanager/media/s3/clip.mp4');
+
         $manager = new DiskManager([$disk], $urlGenerator);
 
-        $url = $manager->publicUrl('s3', 'clip.mp4');
-
-        $this->assertStringContainsString('media-bucket', $url);
-        $this->assertStringContainsString('clip.mp4', $url);
-        $this->assertStringContainsString('X-Amz-Signature=', $url);
+        $this->assertSame('/kbd/filemanager/media/s3/clip.mp4', $manager->publicUrl('s3', 'clip.mp4'));
     }
 
-    public function testAsyncAwsDiskUsesSignedUrlByDefaultWithoutProxy(): void
+    public function testResolveDirectMediaUrlGeneratesSignedUrlForRedirect(): void
     {
         $client = new S3Client([
             'accessKeyId' => 'test',
@@ -50,17 +56,16 @@ class DiskManagerPublicUrlTest extends TestCase
         $disk = new Disk('s3', 'S3', $filesystem, []);
 
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->expects($this->never())->method('generate');
-
         $manager = new DiskManager([$disk], $urlGenerator);
 
-        $url = $manager->publicUrl('s3', 'clip.mp4');
+        $directUrl = $manager->resolveDirectMediaUrl('s3', 'clip.mp4');
 
-        $this->assertStringContainsString('X-Amz-Signature=', $url);
-        $this->assertNotNull($manager->resolveDirectMediaUrl('s3', 'clip.mp4'));
+        $this->assertNotNull($directUrl);
+        $this->assertStringContainsString('X-Amz-Signature=', $directUrl);
+        $this->assertStringContainsString('clip.mp4', $directUrl);
     }
 
-    public function testProxyMediaForcesSymfonyRoute(): void
+    public function testProxyMediaForcesSymfonyRouteAndNoRedirect(): void
     {
         $client = new S3Client([
             'accessKeyId' => 'test',
@@ -81,6 +86,30 @@ class DiskManagerPublicUrlTest extends TestCase
 
         $this->assertNull($manager->resolveDirectMediaUrl('s3', 'clip.mp4'));
         $this->assertSame('/kbd/filemanager/media/s3/clip.mp4', $manager->publicUrl('s3', 'clip.mp4'));
+    }
+
+    public function testPublicUrlUsesPermanentDefaultUriWhenConfigured(): void
+    {
+        $client = new S3Client([
+            'accessKeyId' => 'test',
+            'accessKeySecret' => 'test',
+            'region' => 'eu-west-1',
+        ], null, new MockHttpClient());
+
+        $filesystem = new Filesystem(new AsyncAwsS3Adapter($client, 'media-bucket', 'uploads'));
+        $disk = new Disk('s3', 'S3', $filesystem, [
+            'default_uri' => 'https://cdn.example.test/uploads',
+        ]);
+
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->never())->method('generate');
+
+        $manager = new DiskManager([$disk], $urlGenerator);
+
+        $this->assertSame(
+            'https://cdn.example.test/uploads/clip.mp4',
+            $manager->publicUrl('s3', 'clip.mp4'),
+        );
     }
 
     public function testResolveUrlTwigFilterMatchesDiskManager(): void

@@ -7,12 +7,21 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * Construit un QueryFilterDTO à partir des paramètres HTTP de la requête.
+ */
 class QueryFilterFactory
 {
     public function __construct(private readonly DiskManager $diskManager)
     {
     }
 
+    /**
+     * Extrait et valide les filtres depuis la requête.
+     *
+     * @throws BadRequestHttpException Si le disque est introuvable
+     * @throws NotFoundHttpException   Si le chemin n'existe pas
+     */
     public function create(Request $request): QueryFilterDTO
     {
         $filesystem = $request->query->get('filesystem') ?? $this->diskManager->names()[0];
@@ -33,9 +42,7 @@ class QueryFilterFactory
             throw new BadRequestHttpException(sprintf('Filesystem "%s" not found.', $filesystem));
         }
 
-        $disk = $this->diskManager->disk($filesystem);
-
-        if (!$disk->filesystem()->directoryExists($path)) {
+        if (!$this->diskManager->directoryExists($filesystem, $path)) {
             throw new NotFoundHttpException(sprintf('Path "%s" not found.', $path));
         }
 

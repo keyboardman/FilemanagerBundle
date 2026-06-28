@@ -10,6 +10,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
+ * Type de formulaire Symfony intégrant le filemanager en mode iframe.
+ *
  * @extends AbstractType<string|null>
  */
 class FilemanagerType extends AbstractType

@@ -11,6 +11,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Contrôleur principal affichant l'interface du filemanager en mode page ou iframe.
+ */
 class FilemanagerController extends AbstractController
 {
     public function __construct(
@@ -23,6 +26,7 @@ class FilemanagerController extends AbstractController
     }
 
     #[Route('/kbd/filemanager', name: 'keyboardman_filemanager')]
+    /** Affiche l'interface du filemanager avec listage et filtres. */
     public function __invoke(Request $request, IframeTokenValidator $validator): Response
     {
         if (!$validator->isValid($request)) {

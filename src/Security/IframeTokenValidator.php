@@ -4,6 +4,9 @@ namespace Keyboardman\FilemanagerBundle\Security;
 
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Valide le token d'authentification pour les requêtes iframe cross-domain.
+ */
 class IframeTokenValidator
 {
     /**
@@ -15,6 +18,9 @@ class IframeTokenValidator
     ) {
     }
 
+    /**
+     * Vérifie si la requête est autorisée (token iframe ou appel direct).
+     */
     public function isValid(Request $request): bool
     {
         if (false === $this->verify) {
