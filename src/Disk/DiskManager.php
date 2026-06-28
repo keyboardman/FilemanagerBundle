@@ -2,12 +2,14 @@
 
 namespace Keyboardman\FilemanagerBundle\Disk;
 
+use Keyboardman\FilemanagerBundle\DependencyInjection\LiipImagineConfigurationBuilder;
 use Keyboardman\FilemanagerBundle\Media\Streaming\FlysystemAdapterExtractor;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\UnableToGenerateTemporaryUrl;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
@@ -34,6 +36,7 @@ class DiskManager
     public function __construct(
         iterable $disks,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly ?CacheManager $cacheManager = null,
     ) {
         foreach ($disks as $disk) {
             $this->disks[$disk->getName()] = $disk;
@@ -291,6 +294,8 @@ class DiskManager
             // Déplacement = rename en Flysystem
             $fs->move($oldPath, $newPath);
 
+            $this->purgeThumbnailCache($filesystem, $oldPath);
+
             return true;
         } catch (FilesystemException $e) {
             throw new \RuntimeException('Erreur lors du renommage : '.$e->getMessage());
@@ -353,9 +358,25 @@ class DiskManager
             }
 
             $fs->delete($normalizedPath);
+
+            $this->purgeThumbnailCache($filesystem, $normalizedPath);
         } catch (FilesystemException $e) {
             throw new \RuntimeException('Erreur lors de la suppression du fichier : '.$e->getMessage(), previous: $e);
         }
+    }
+
+    private function purgeThumbnailCache(string $filesystem, string $path): void
+    {
+        if (null === $this->cacheManager) {
+            return;
+        }
+
+        $normalizedPath = ltrim($path, '/');
+        if ('' === $normalizedPath) {
+            return;
+        }
+
+        $this->cacheManager->remove($normalizedPath, LiipImagineConfigurationBuilder::filterSetName($filesystem));
     }
 
     /**

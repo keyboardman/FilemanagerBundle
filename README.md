@@ -6,11 +6,11 @@ Bundle Symfony pour intégrer un filemanager dans vos formulaires, basé sur [Fl
 
 ## Prérequis
 
-- **PHP** 8.2 ou supérieur
+- **PHP** 8.2 ou supérieur avec l'extension **GD** (`ext-gd`) pour la génération de miniatures
 - **Symfony** 8.x
 - **symfony/asset-mapper** (pour exposer les assets du bundle)
 
-`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-async-aws-s3` sont installés automatiquement avec le bundle. Il reste à enregistrer `League\FlysystemBundle\FlysystemBundle` dans `config/bundles.php`.
+`league/flysystem`, `league/flysystem-bundle`, `league/flysystem-async-aws-s3` et `liip/imagine-bundle` sont installés automatiquement avec le bundle. Il reste à enregistrer `League\FlysystemBundle\FlysystemBundle` et `Liip\ImagineBundle\LiipImagineBundle` dans `config/bundles.php`.
 
 ## Installation
 
@@ -35,7 +35,7 @@ Dans le `composer.json` du projet, ajoutez le dépôt puis installez :
 composer update keyboardman/filemanager-bundle
 ```
 
-`league/flysystem`, `league/flysystem-bundle` et `league/flysystem-async-aws-s3` sont installés en même temps ; aucune commande Composer supplémentaire n'est requise.
+`league/flysystem`, `league/flysystem-bundle`, `league/flysystem-async-aws-s3` et `liip/imagine-bundle` sont installés en même temps ; aucune commande Composer supplémentaire n'est requise.
 
 ### 2. Enregistrer le bundle
 
@@ -46,10 +46,11 @@ return [
     // ...
     Keyboardman\FilemanagerBundle\KeyboardmanFilemanagerBundle::class => ['all' => true],
     League\FlysystemBundle\FlysystemBundle::class => ['all' => true],
+    Liip\ImagineBundle\LiipImagineBundle::class => ['all' => true],
 ];
 ```
 
-Enregistrez `KeyboardmanFilemanagerBundle` **avant** `FlysystemBundle` afin que les storages soient créés automatiquement à partir de votre configuration.
+Enregistrez `KeyboardmanFilemanagerBundle` **avant** `FlysystemBundle` et `LiipImagineBundle` afin que les storages et les miniatures soient configurés automatiquement.
 
 ### 3. Enregistrer les routes
 
@@ -62,11 +63,28 @@ keyboardman_filemanager_bundle_routes:
 
 Le filemanager sera alors accessible sur la route nommée `keyboardman_filemanager` (ex. `/kbd/filemanager`).
 
+Ajoutez `public/media/cache/filemanager/` au `.gitignore` de votre projet Symfony : ce répertoire contient les miniatures générées automatiquement.
+
 ---
 
 ## Configuration
 
-Le filemanager se configure dans un seul fichier `config/packages/keyboardman_filemanager.yaml`. Chaque disk définit son stockage Flysystem inline ; **aucun fichier `flysystem.yaml` dédié n'est requis** pour le filemanager.
+Le filemanager se configure dans un seul fichier `config/packages/keyboardman_filemanager.yaml`. Chaque disk définit son stockage Flysystem inline ; **aucun fichier `flysystem.yaml` ni `liip_imagine.yaml` dédié n'est requis**.
+
+### Miniatures d'images
+
+Les aperçus en vue cartes et vue liste utilisent **LiipImagineBundle**, configuré automatiquement à partir de vos disks. Aucune configuration n'est requise : les valeurs par défaut (`max_size: 320`, `quality: 82`) conviennent à un usage standard.
+
+Pour ajuster les miniatures (optionnel) :
+
+```yaml
+keyboardman_filemanager:
+  thumbnail:
+    max_size: 320   # défaut
+    quality: 82     # défaut
+```
+
+Les miniatures sont mises en cache dans `public/media/cache/filemanager/`. La prévisualisation modale conserve le fichier original en pleine résolution.
 
 Paramètres communs à chaque disk :
 

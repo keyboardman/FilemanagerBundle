@@ -40,6 +40,11 @@ class KeyboardmanFilemanagerExtension extends Extension
             $container->prependExtensionConfig('flysystem', ['storages' => $storages]);
         }
 
+        $liipImagine = LiipImagineConfigurationBuilder::build($config['disks'], $config['thumbnail']);
+        if ([] !== $liipImagine) {
+            $container->prependExtensionConfig('liip_imagine', $liipImagine);
+        }
+
         $container->setParameter('keyboardman_filemanager.upload.chunk_size', $config['upload']['chunk_size']);
         $container->setParameter('keyboardman_filemanager.upload.chunk_threshold', $config['upload']['chunk_threshold']);
 

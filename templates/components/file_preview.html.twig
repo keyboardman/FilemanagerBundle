@@ -15,7 +15,7 @@
 		<div class="file-preview d-flex align-items-center justify-content-center" data-file="{{ file.path|resolve_url(filter.filesystem) }}" data-type="{{ type }}" data-mime="{{ mime }}" data-name="{{ file.name }}" style="width: 100%; height: 100%; cursor: pointer;">
 
 			{% if type == 'image' %}
-				<img loading="lazy" src="{{ file.path|resolve_url(filter.filesystem) }}" alt="{{ file.name }}" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+				<img loading="lazy" src="{{ file.path|imagine_thumbnail(filter.filesystem) }}" alt="{{ file.name }}" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
 			{% elseif type == 'video' %}
 				<i class="bi bi-file-earmark-play" style="font-size: 3rem;"></i>
 			{% elseif type == 'audio' %}

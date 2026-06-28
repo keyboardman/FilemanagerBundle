@@ -4,6 +4,7 @@ namespace Keyboardman\FilemanagerBundle\Tests;
 
 use Keyboardman\FilemanagerBundle\KeyboardmanFilemanagerBundle;
 use League\FlysystemBundle\FlysystemBundle;
+use Liip\ImagineBundle\LiipImagineBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -19,6 +20,7 @@ class TestKernel extends BaseKernel
         yield new FrameworkBundle();
         yield new KeyboardmanFilemanagerBundle();
         yield new FlysystemBundle();
+        yield new LiipImagineBundle();
     }
 
     protected function configureContainer(ContainerBuilder $container): void
@@ -48,5 +50,6 @@ class TestKernel extends BaseKernel
     protected function configureRoutes(RoutingConfigurator $routes): void
     {
         $routes->import('../src/Controller/', 'attribute');
+        $routes->import('@LiipImagineBundle/Resources/config/routing.yaml');
     }
 }

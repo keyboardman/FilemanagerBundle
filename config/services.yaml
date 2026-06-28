@@ -28,6 +28,7 @@ services:
     arguments:
       $disks: !tagged_iterator
         tag: keyboardman_filemanager.disk
+      $cacheManager: '@?Liip\ImagineBundle\Imagine\Cache\CacheManager'
 
   Keyboardman\FilemanagerBundle\Upload\:
     resource: "../src/Upload/"
@@ -50,3 +51,5 @@ services:
   Keyboardman\FilemanagerBundle\Twig\FilemanagerExtension:
     public: true
     tags: ["twig.extension"]
+    arguments:
+      $cacheManager: '@?Liip\ImagineBundle\Imagine\Cache\CacheManager'

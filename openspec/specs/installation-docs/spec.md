@@ -10,9 +10,9 @@ La documentation d'installation SHALL lister les prérequis nécessaires pour ut
 #### Scenario: Prérequis listés
 
 - **WHEN** un développeur consulte la documentation d'installation
-- **THEN** il trouve la liste des prérequis : PHP 8.2+, Symfony 8.x, symfony/asset-mapper
-- **AND** il est indiqué que `league/flysystem` et `league/flysystem-bundle` sont installés automatiquement avec le bundle
-- **AND** il est indiqué que `League\FlysystemBundle\FlysystemBundle` doit être enregistré dans `config/bundles.php`
+- **THEN** il trouve la liste des prérequis : PHP 8.2+, Symfony 8.x, symfony/asset-mapper, extension PHP GD (`ext-gd`)
+- **AND** il est indiqué que `league/flysystem`, `league/flysystem-bundle` et `liip/imagine-bundle` sont installés automatiquement avec le bundle
+- **AND** il est indiqué que `League\FlysystemBundle\FlysystemBundle` et `Liip\ImagineBundle\LiipImagineBundle` doivent être enregistrés dans `config/bundles.php`
 
 ---
 
@@ -25,7 +25,26 @@ La documentation SHALL expliquer comment installer le bundle via Composer.
 - **WHEN** un développeur suit la documentation
 - **THEN** il peut installer le bundle avec `composer require keyboardman/filemanager-bundle` ou via un dépôt path
 - **AND** il sait enregistrer le bundle dans `config/bundles.php`
-- **AND** il n'a pas besoin d'exécuter une commande Composer séparée pour Flysystem
+- **AND** il n'a pas besoin d'exécuter une commande Composer séparée pour Flysystem ni pour LiipImagine
+
+---
+
+### Requirement: Documentation des miniatures d'images
+
+La documentation SHALL expliquer que les miniatures sont générées via LiipImagineBundle, configuré automatiquement, sans fichier `liip_imagine.yaml` dédié.
+
+#### Scenario: Miniatures sans configuration explicite
+
+- **WHEN** un développeur installe le bundle sans section `thumbnail` dans `keyboardman_filemanager.yaml`
+- **THEN** les miniatures fonctionnent avec les valeurs par défaut (`max_size: 320`, `quality: 82`)
+- **AND** le cache est stocké dans `public/media/cache/filemanager/`
+- **AND** la documentation indique d'ajouter `public/media/cache/filemanager/` au `.gitignore` du projet hôte
+
+#### Scenario: Surcharge optionnelle des miniatures
+
+- **WHEN** un développeur souhaite ajuster la taille ou la qualité des miniatures
+- **THEN** il peut déclarer optionnellement la section `thumbnail` dans `keyboardman_filemanager.yaml`
+- **AND** la documentation indique que cette section n'est pas requise pour un usage standard
 
 ---
 
@@ -38,7 +57,7 @@ La documentation SHALL expliquer comment configurer les disks du filemanager ave
 - **WHEN** un développeur configure keyboardman_filemanager
 - **THEN** il trouve un exemple `keyboardman_filemanager.yaml` avec la structure disks
 - **AND** chaque disk définit `label`, `storage` (adapter, visibility, options), `signed_urls`, `default_uri`
-- **AND** la documentation précise qu'aucun fichier `flysystem.yaml` séparé n'est requis pour le filemanager
+- **AND** la documentation précise qu'aucun fichier `flysystem.yaml` ni `liip_imagine.yaml` séparé n'est requis pour le filemanager
 
 ---
 
