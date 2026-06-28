@@ -9,6 +9,7 @@ import modalDelete from "./components/modal-delete";
 import filesystemSelect from "./components/filesystem-select";
 import mediaFilter from "./components/media-filter";
 import mediaSort from "./components/media-sort";
+import viewToggle from "./components/view-toggle";
 import { getParentOrigin } from "./components/utils";
 
 import * as bootstrap from "bootstrap";
@@ -62,6 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     filesystemSelect();
     mediaSort();
+    viewToggle();
     fileCreateDirectory(currentFilesystem, app.dataset.path, createDirectoryUrl);
 
     modalPreview(bootstrap);

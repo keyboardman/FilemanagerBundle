@@ -28,10 +28,13 @@ class QueryFilterDTO
     /** Active le mode cross-domain pour l'iframe. */
     public ?bool $crossdomain = false;
 
+    /** Mode d'affichage des fichiers (card ou list). */
+    public string $view = 'card';
+
     /**
      * Fabrique un DTO à partir des paramètres de requête.
      */
-    public static function create(string $filesystem, string $path, ?string $mode = null, ?string $target = null, ?string $type = null, ?string $sort = 'name_asc', ?bool $crossdomain = false): QueryFilterDTO
+    public static function create(string $filesystem, string $path, ?string $mode = null, ?string $target = null, ?string $type = null, ?string $sort = 'name_asc', ?bool $crossdomain = false, string $view = 'card'): QueryFilterDTO
     {
         $self = new self();
         $self->filesystem = $filesystem;
@@ -41,6 +44,7 @@ class QueryFilterDTO
         $self->type = $type;
         $self->sort = $sort;
         $self->crossdomain = $crossdomain;
+        $self->view = $view;
 
         return $self;
     }

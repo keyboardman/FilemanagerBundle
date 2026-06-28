@@ -28,6 +28,12 @@
 				<option value="name_desc" {% if filter.sort == 'name_desc' %} selected {% endif %}>Nom ↓</option>
 			</select>
 
+			{# Vue cartes / liste #}
+			<select id="view-toggle" class="form-select form-select-sm" title="Mode d'affichage">
+				<option value="card" {% if filter.view == 'card' %} selected {% endif %}>Cartes</option>
+				<option value="list" {% if filter.view == 'list' %} selected {% endif %}>Liste</option>
+			</select>
+
 			{# Boutons actions #}
 			<button class="btn btn-outline-light btn-sm" id="file-create-directory-btn" type="button">Nouveau&nbsp;dossier</button>
 			<button class="btn btn-primary btn-sm" id="file-upload-btn" type="button">Upload</button>

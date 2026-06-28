@@ -1,11 +1,19 @@
 <main class="flex-grow-1 p-3 kbd_main">
 	{% include '@KeyboardmanFilemanager/components/upload_dropzone.html.twig' %}
 
-	<div class="row row-cols-1 row-cols-md-4 g-3">
-		{% for file in files %}
-			<div class="col">
-				{% include '@KeyboardmanFilemanager/components/file_card.html.twig' with {'file': file, 'filter': filter} %}
-			</div>
-		{% endfor %}
-	</div>
+	{% if filter.view == 'list' %}
+		<div class="file-list">
+			{% for file in files %}
+				{% include '@KeyboardmanFilemanager/components/file_list_item.html.twig' with {'file': file, 'filter': filter} %}
+			{% endfor %}
+		</div>
+	{% else %}
+		<div class="row row-cols-1 row-cols-md-4 g-3">
+			{% for file in files %}
+				<div class="col">
+					{% include '@KeyboardmanFilemanager/components/file_card.html.twig' with {'file': file, 'filter': filter} %}
+				</div>
+			{% endfor %}
+		</div>
+	{% endif %}
 </main>

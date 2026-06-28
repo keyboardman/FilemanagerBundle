@@ -38,6 +38,11 @@ class QueryFilterFactory
 
         $crossdomain = $request->query->get('crossdomain') ?? false;
 
+        $view = $request->query->get('view') ?? 'card';
+        if (!\in_array($view, ['card', 'list'], true)) {
+            $view = 'card';
+        }
+
         if (!$this->diskManager->has($filesystem)) {
             throw new BadRequestHttpException(sprintf('Filesystem "%s" not found.', $filesystem));
         }
@@ -46,6 +51,6 @@ class QueryFilterFactory
             throw new NotFoundHttpException(sprintf('Path "%s" not found.', $path));
         }
 
-        return QueryFilterDTO::create($filesystem, $path, $mode, $target, $type, $sort, $crossdomain);
+        return QueryFilterDTO::create($filesystem, $path, $mode, $target, $type, $sort, $crossdomain, $view);
     }
 }

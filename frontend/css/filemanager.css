@@ -10,3 +10,34 @@
 .upload-progress-list:empty {
     display: none;
 }
+
+.file-list {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.file-list-item:last-child {
+    border-bottom: none !important;
+}
+
+.file-list-item__thumb {
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 0.25rem;
+}
+
+.file-list-item__thumb > div {
+    height: 100% !important;
+}
+
+.file-list-item__thumb .bi {
+    font-size: 1.25rem !important;
+}
+
+.file-list-item__thumb img {
+    max-height: 48px;
+    max-width: 48px;
+    object-fit: cover;
+}
